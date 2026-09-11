@@ -931,7 +931,7 @@ claude-sonnet-5
 
 - 규칙(§4-4): `verify/` 에 네 파일과 `steps/*.ts` 1개 이상. report 에 모델명, 입력 1~3 절(비어 있지 않음), 외부 서비스 절(있어야 함, `- 없음` 허용). 사람 절이 없으면 경고
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/phase4.test.mjs`:
 
@@ -1000,12 +1000,12 @@ test('phase4: verify 폴더 없으면 실패', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"phase4.test.mjs`
 Expected: FAIL — `Cannot find module '.../lib/phase4.mjs'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/lib/phase4.mjs`:
 
@@ -1046,12 +1046,12 @@ export function checkPhase4(a2wDir) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"phase4.test.mjs`
 Expected: PASS 5 tests
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/phase4.test.mjs .claude/skills/agent-to-webapp/scripts/lib/phase4.mjs
