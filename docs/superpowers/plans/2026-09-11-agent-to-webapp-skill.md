@@ -1917,7 +1917,7 @@ git commit -m "docs: 프롬프트 실행판 다섯 개와 결정 축 표"
 - Consumes: Task 7 CLI 명령, Task 8 훅 경로, Task 9 프롬프트 번호
 - Produces: SKILL.md(Task 13)가 "N단계에서는 `references/phase-N.md` 를 읽는다" 로 가리키는 문서. 각 문서는 "언제 읽나 / 할 일 / 게이트 / 멈출 곳" 네 절. 문서 안의 `$SKILL_DIR` 은 스킬이 로드될 때 Claude Code 가 알려주는 이 스킬의 기본 경로, `$APP` 은 작업 폴더 절대 경로, `$TARGET` 은 STATUS 의 target 을 절대 경로로 푼 것, `$A2W` 는 `$APP/docs/agent-to-webapp`
 
-- [ ] **Step 1: `phase-1.md` 작성**
+- [x] **Step 1: `phase-1.md` 작성**
 
 ````markdown
 # 1단계 관찰
@@ -1993,7 +1993,7 @@ node $SKILL_DIR/scripts/check_phase.mjs 1
 대조하고, 틀리면 파일 이름을 바꿔 맞춘다. 실패하면 부족한 것을 학습자에게 알리고 멈춘다.
 ````
 
-- [ ] **Step 2: `phase-2.md` 작성**
+- [x] **Step 2: `phase-2.md` 작성**
 
 ````markdown
 # 2단계 판정
@@ -2032,7 +2032,7 @@ node $SKILL_DIR/scripts/check_phase.mjs 2
 조건부 고정 가능으로 기록되고 사유가 STATUS log 에 남는다. 3단계 workflow.md 의 `## 조건` 에 그 사유를 적는다.
 ````
 
-- [ ] **Step 3: `phase-3.md` 작성**
+- [x] **Step 3: `phase-3.md` 작성**
 
 ````markdown
 # 3단계 고정
@@ -2066,7 +2066,7 @@ node $SKILL_DIR/scripts/check_phase.mjs 3
 필요하고 입력 3개 × 단계 수만큼 호출한다" 고 알리고 계속할지 묻는다.
 ````
 
-- [ ] **Step 4: `phase-4.md` 작성**
+- [x] **Step 4: `phase-4.md` 작성**
 
 ````markdown
 # 4단계 재검증
@@ -2108,7 +2108,7 @@ node $SKILL_DIR/scripts/check_phase.mjs 4
 `rollback 3` 후 3단계부터 다시.
 ````
 
-- [ ] **Step 5: `phase-5.md` 작성**
+- [x] **Step 5: `phase-5.md` 작성**
 
 ````markdown
 # 5단계 전환
@@ -2148,7 +2148,7 @@ node $SKILL_DIR/scripts/check_phase.mjs 5
 바이브 코딩은 이 스킬의 범위 밖이다. 배포 후에는 `references/deploy-checklist.md` 를 따른다.
 ````
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add .claude/skills/agent-to-webapp/references/phase-*.md
