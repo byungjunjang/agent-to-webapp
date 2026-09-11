@@ -2288,7 +2288,7 @@ git commit -m "docs: 브리프 틀과 배포 체크리스트"
 - Produces: 1단계(phase-1.md)가 대상의 `.claude/settings.local.json` / `.codex/hooks.json` 에 합치는 JSON. `<SKILL_DIR>` 과 `<APP>` 은 스킬이 절대 경로(슬래시)로 치환한다
 - Claude Code 훅 JSON 형식(확인됨): `hooks.PostToolUse[].hooks[] = { type: "command", command }`. `matcher` 를 생략하면 모든 도구. `permissions.additionalDirectories` 는 같은 파일에 둔다. Codex 는 "hooks.json 과 같은 이벤트 스키마" 라고만 확인돼 같은 모양으로 둔다(§14 열린 항목)
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/assets.test.mjs`:
 
@@ -2315,12 +2315,12 @@ test('hooks.claude.example.json: additionalDirectories 에 <APP>', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"assets.test.mjs`
 Expected: FAIL — `ENOENT … hooks.claude.example.json`
 
-- [ ] **Step 3: 두 파일 작성**
+- [x] **Step 3: 두 파일 작성**
 
 `hooks.claude.example.json`:
 
@@ -2363,12 +2363,12 @@ Expected: FAIL — `ENOENT … hooks.claude.example.json`
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"assets.test.mjs`
 Expected: PASS 3 tests
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/assets.test.mjs .claude/skills/agent-to-webapp/assets/

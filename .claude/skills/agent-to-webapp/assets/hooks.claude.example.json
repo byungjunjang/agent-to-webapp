@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "additionalDirectories": ["<APP>"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"<SKILL_DIR>/scripts/log_tool_use.mjs\" \"<APP>/docs/agent-to-webapp/runs/tools\""
+          }
+        ]
+      }
+    ]
+  }
+}
