@@ -2603,21 +2603,31 @@ README.md → `../rfq-quote-generator/CLAUDE.local.md` 와 `.claude/settings.loc
 뒤 종료. 입력 3종은 아래로 승인한다(에이전트가 다르게 제안하면 아래로 바꾼다).
 
 - `1-easy-novadrive/`: 원본 `input/NovaDrive/` 의 PDF 둘 복사
-- `2-normal-helios/`: `customer_rfq_email.md` 를 새로 쓰고 도면은 `part_drawing_EV_input_shaft.pdf` 를 복사
+- `2-normal-helios/`: `customer_rfq_email.md` 를 새로 쓰고 도면은 `part_drawing_EV_input_shaft.pdf` 를 복사. 이메일 사양은 도면 ND-IS-042 Rev.A 와 맞춘다 — 첫 초안은 ECD·경도·흔들림이 도면과 달라 "보통" 이 두 번째 예외가 됐다(dogfood 1단계에서 스킬이 잡음)
 
 ```
-From: procurement@helios-motors.example
-Subject: RFQ - Heat treatment for EV reduction gear shaft (P/N HX-2210)
+From: Maria Keller <procurement@helios-motors.example>, Helios Motors GmbH
+To: Sales Engineering Team, Dongwoo Dongam Technology (Wuxi)
+Date: 2026-09-01
+RFQ No.: HX-RFQ-2609-003
+Subject: RFQ - Heat treatment for EV reducer input shaft (our P/N HX-2210, drawing ND-IS-042 Rev.A)
 
-Please quote carburizing heat treatment for the attached shaft drawing.
-- Material: SCM420H
-- Quantity: 5,000 pcs/month, 12-month contract
-- Effective case depth: 0.8-1.2 mm
-- Surface hardness: 58-62 HRC, core hardness 30-45 HRC
-- Straightening after quench required (runout <= 0.05 mm)
-- Packing: standard, rust preventive oil
-- PPAP level 3 required with first shipment
+Hello,
+
+Please quote carburizing heat treatment for the attached drawing ND-IS-042 Rev.A (our P/N HX-2210).
+- Material: SCM420H, supplied by us after machining
+- Quantity: first lot 2,500 pcs, then 5,000 pcs/month (12-month contract)
+- Effective case depth: 0.45-0.65 mm @ HV550 on sections C and D, per drawing
+- Surface hardness HRC 58-62, core hardness HRC 30-42, per drawing
+- Total runout after heat treatment <= 0.03 mm with no grinding correction, per drawing. Press straightening after quench is acceptable
+- Packing: returnable plastic trays with rust preventive oil
+- PPAP level 3 required with the first shipment
 - Target delivery: 6 weeks from PO
+
+Please reply with the recommended process route, unit price, lead time and inspection items.
+
+Best regards,
+Maria Keller
 ```
 
 - `3-edge-orion/`: `customer_rfq_email.md` 를 새로 쓰고 도면은 같은 PDF 복사. 수량·경도·납기가 없어 2단계(누락 스펙)와 에스컬레이션이 드러난다
