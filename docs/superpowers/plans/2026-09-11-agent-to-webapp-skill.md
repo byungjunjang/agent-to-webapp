@@ -2585,7 +2585,7 @@ git commit -m "chore: 예제 두 쌍 — rfq-quote-generator(고정 가능), com
 사람이 끼는 태스크다. 서브에이전트가 아니라 **이 repo 를 연 사람과 세션이 함께** 한다. 스펙 §10 의 첫 행이
 성공 기준이다. 발견한 문제는 스킬을 고쳐서 해결하고(Task 1~13 의 파일), 시행착오는 Step 8 에 적는다.
 
-**위치(실행 중 변경).** `examples/` 는 이 저장소 안이라 거기서 에이전트를 돌리면 저장소 CLAUDE.md 와 WorkOS
+**위치(실행 중 변경).** Windows Git Bash 에서 `claude -p "/agent-to-webapp …"` 는 MSYS 경로 변환으로 첫 인자가 바뀐다. `MSYS_NO_PATHCONV=1` 을 붙인다. `examples/` 는 이 저장소 안이라 거기서 에이전트를 돌리면 저장소 CLAUDE.md 와 WorkOS
 CLAUDE.md 가 관찰 세션에 섞인다. 저장소 밖(세션 스크래치)에 `.demo-projects` 사본과 `-app` 폴더를 새로 만들어
 돌리고, 스킬은 유저 스코프 설치본(Task 17 Step 1 을 앞당김)을 쓴다. 관찰 세션은 `--setting-sources project,local`
 로 사용자 전역 플러그인을 뺀다. 끝나면 `-app/docs/agent-to-webapp/` 만 `examples/<이름>-app/` 로 옮긴다. 아래
@@ -2732,6 +2732,10 @@ git commit -m "feat: dogfood 고정 가능 경로 — rfq-quote-generator 1~5단
 
 ### Task 16: dogfood — 고정 불가 경로 (`competitor-review-crawler`)
 
+**건너뜀(2026-09-11, 사용자 결정).** 크롤링할 URL 3개를 정한 뒤 따로 돌린다. 그때까지 고정 불가 경로는 게이트
+단위 테스트(2단계 고정 불가 → 종료·라우팅 안내·이후 단계 거부)로만 검증된 상태다. 돌릴 때는 Task 15 의 "위치" 와
+`MSYS_NO_PATHCONV=1` 을 따른다.
+
 사람이 끼는 태스크다. 스펙 §10 둘째 행이 성공 기준이다: 2단계에서 멈추고 STATUS 에 종료, 라우팅 안내,
 3단계 이후 파일 없음.
 
@@ -2850,6 +2854,10 @@ Expected: 스킬이 로드되고 "전환할 에이전트 폴더가 어디인가"
 스킬 목록에 `agent-to-webapp` 가 두 번(프로젝트·유저) 보이는 것은 repo 안에서만이고 정상이다.
 
 - [ ] **Step 3: 위키 포인터**
+
+**실행 중 변경.** LLM-Wiki CLAUDE.md 가 위키 직접 편집을 금한다(`raw/practice/` 에 먼저 쓰고 `/wiki-ingest`).
+포인터 한 줄은 직접 달지 않고 Task 15 의 `raw/practice/` 노트에 요청으로 넣었다. `raw/` 는 저장 뒤 수정하지 않으므로
+노트는 4·5단계가 정리된 뒤 한 번 쓴다. `/wiki-ingest` 는 "왜 들이나" 를 되묻는 사람 단계라 사용자가 돌린다.
 
 `C:\Users\byung\LLM-Wiki\wiki\vibe-coding\local-agent-to-web-app.md` 의 `## 프롬프트 네 개` 절 첫 줄에 한 줄을 넣는다:
 
