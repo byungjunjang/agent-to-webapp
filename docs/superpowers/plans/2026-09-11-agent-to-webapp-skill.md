@@ -504,7 +504,7 @@ git commit -m "feat: 1단계 관찰 게이트 — run 3개·헤딩·입력 3개�
 - verdict.md 형식(정본, 프롬프트 7-2 가 지시): 배정표는 `| 단계 | 칸 | 근거 |` 세 열, 칸은 `QUADRANTS` 문자열 그대로. 마지막에 `판정: 고정 가능` / `판정: 조건부 고정 가능(조건 …)` / `판정: 고정 불가` 한 줄
 - 규칙(§2-7): 4번째 칸 행이 있으면 `고정 가능` 거부. `override` 가 주어지면 파일 내용과 무관하게 `조건부 고정 가능` 으로 통과시키고 경고에 사유를 남긴다
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/phase2.test.mjs`:
 
@@ -579,12 +579,12 @@ test('phase2: override 는 조건부로 통과시키고 사유를 경고에 남�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"phase2.test.mjs`
 Expected: FAIL — `Cannot find module '.../lib/phase2.mjs'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/lib/phase2.mjs`:
 
@@ -653,12 +653,12 @@ export function checkPhase2(a2wDir, { override = null } = {}) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"phase2.test.mjs`
 Expected: PASS 8 tests
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/phase2.test.mjs .claude/skills/agent-to-webapp/scripts/lib/phase2.mjs
