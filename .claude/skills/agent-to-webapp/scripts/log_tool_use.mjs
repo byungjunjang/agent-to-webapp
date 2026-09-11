@@ -7,10 +7,16 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const MAX_FIELD = 2000;
+// 기록은 작업 폴더 repo 와 examples/ 로 커밋된다. API 키 모양 문자열은 남기지 않는다.
+export const KEY_PATTERN = /sk-ant-[A-Za-z0-9_-]+/g;
+
+export function redact(s) {
+  return typeof s === 'string' ? s.replace(KEY_PATTERN, 'sk-ant-***') : s;
+}
 
 export function truncate(v, max = MAX_FIELD) {
   if (v === undefined || v === null) return undefined;
-  const s = typeof v === 'string' ? v : JSON.stringify(v);
+  const s = redact(typeof v === 'string' ? v : JSON.stringify(v));
   return s.length > max ? `${s.slice(0, max)}…(+${s.length - max})` : s;
 }
 

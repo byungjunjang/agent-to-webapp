@@ -4,17 +4,20 @@
 //   node check_phase.mjs status
 //   node check_phase.mjs <1-5> [--approve] [--batch] [--override "<사유>"]
 //   node check_phase.mjs rollback <N>
+//   node check_phase.mjs key [--skill-dir <폴더>]
 // 종료코드: 0 통과 / 1 실패 / 2 사용법 오류. STATUS.md 는 이 스크립트만 쓴다.
 import { existsSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { join, resolve, dirname, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { A2W_DIR, RUNTIMES, emptyStatus, readStatus, writeStatus, formatStatus, today } from './lib/status.mjs';
 import { checkPhase1 } from './lib/phase1.mjs';
 import { checkPhase2 } from './lib/phase2.mjs';
 import { checkPhase3 } from './lib/phase3.mjs';
 import { checkPhase4 } from './lib/phase4.mjs';
 import { checkPhase5 } from './lib/phase5.mjs';
+import { KEY_NAME, LABELS, findKey } from './lib/key.mjs';
 
+export const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const NEEDS_APPROVAL = [2, 3];
 export const PHASES = [1, 2, 3, 4, 5];
 export const ROUTING_HINT = [
@@ -22,12 +25,15 @@ export const ROUTING_HINT = [
   '별도 트랙: Agent SDK 를 Vercel 밖 컨테이너에 두거나 Managed Agents. 선례 workos/litigation-writer-app.',
   'Agent SDK 는 settingSources 를 생략하면 CLAUDE.md·skills 를 CLI 처럼 다 읽는다. 배포 앱은 settingSources: [] 로 격리하고 필요한 것만 명시한다.',
 ].join('\n');
+export const ENV_WARNING =
+  `경고: 셸 환경변수 ${KEY_NAME} 가 있다. Claude Code 도 구독 대신 이 키로 과금한다. 스킬 .env 로 옮기고 환경변수는 지우기를 권한다`;
 const USAGE = [
   '사용법 (작업 폴더에서):',
   '  node check_phase.mjs init --target <경로> --runtime <claude-code|codex>',
   '  node check_phase.mjs status',
   '  node check_phase.mjs <1-5> [--approve] [--batch] [--override "<사유>"]',
   '  node check_phase.mjs rollback <N>',
+  '  node check_phase.mjs key [--skill-dir <폴더>]',
 ].join('\n');
 const BOOL_FLAGS = new Set(['approve', 'batch']);
 const CHECKS = {
@@ -86,6 +92,22 @@ function rollback(cwd, n, out, err) {
   return 0;
 }
 
+// API 키의 출처만 답한다. 값은 읽어서 버리고 절대 출력하지 않는다.
+function key(cwd, flags, out, err) {
+  const skillDir = typeof flags['skill-dir'] === 'string' ? resolve(cwd, flags['skill-dir']) : SKILL_DIR;
+  const r = findKey({ skillDir, appDir: cwd });
+  if (r.sources.includes('env')) out(ENV_WARNING);
+  if (!r.active) {
+    err(`API 키가 없다. ${join(skillDir, '.env.example')} 를 같은 폴더에 .env 로 복사하고 ${KEY_NAME}=... 한 줄을 채워라. 키를 채팅에 붙여넣지 않는다`);
+    return 1;
+  }
+  const others = r.sources.filter(s => s !== r.active).map(s => LABELS[s]);
+  out(`API 키: ${LABELS[r.active]} 에서 읽는다${others.length ? ` (가려진 곳: ${others.join(', ')})` : ''}`);
+  const skillEnv = r.skillFile.split(sep).join('/');
+  out(`실행: node --env-file-if-exists="${skillEnv}" --env-file-if-exists=.env run.ts <입력 폴더>`);
+  return 0;
+}
+
 function gate(cwd, n, flags, out, err) {
   const st = readStatus(cwd);
   if (!st) { err('STATUS.md 가 없다. 먼저 init'); return 2; }
@@ -130,6 +152,7 @@ export function run(argv, cwd, out = console.log, err = console.error) {
   if (cmd === 'init') return init(cwd, flags, out, err);
   if (cmd === 'status') return status(cwd, out, err);
   if (cmd === 'rollback') return rollback(cwd, Number(rest[0]), out, err);
+  if (cmd === 'key') return key(cwd, flags, out, err);
   const n = Number(cmd);
   if (PHASES.includes(n)) return gate(cwd, n, flags, out, err);
   err(USAGE);

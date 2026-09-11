@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.*
+!.env.example
 CLAUDE.local.md
 AGENTS.override.md
 .claude/settings.local.json
