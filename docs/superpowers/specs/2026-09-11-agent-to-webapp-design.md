@@ -1,10 +1,12 @@
 # 설계: agent-to-webapp 스킬 — 로컬 에이전트를 웹 앱으로 옮기는 고정 공정
 
-작성 2026-09-11 · 상태: 승인(brainstorming 1라운드, 2026-09-11) · 다음 단계: `superpowers:writing-plans` 로 구현 계획
+작성 2026-09-11 · 상태: 승인(brainstorming 1라운드 → grill-me 2라운드 반영, 2026-09-11) ·
+다음 단계: `superpowers:writing-plans` 로 구현 계획
 
 이 문서는 LLM-Wiki 의 `wiki/vibe-coding/local-agent-to-web-app.md` 를 실행 절차로 옮기는
-기획서다. 위키가 지식의 정본이고 이 문서는 그 지식을 스킬로 바꾸는 설계다. 위키가 갱신되면
-이 문서와 스킬의 `references/` 도 따라 고친다.
+기획서다. 위키는 개념과 프롬프트 원문을 보존하고, 이 문서와 스킬의 `references/` 는 그
+지식의 **실행판** 이다(§2-17). 실행판이 원문에서 벗어날 때는 이유를 `raw/practice/` 로 보내
+위키에 되먹인다.
 
 ## 1. 배경과 목적
 
@@ -26,115 +28,192 @@ Vercel 에 바이브 코딩)가 실습에서 가장 자주 실패하는 케이�
 이 공정의 산출물인 2×2 배정표와 `workflow.md` 는 하네스 엔지니어링 강의의 실질적 결과물이
 된다 — CLAUDE.md 와 Skills 는 무엇을 하는지를 남기고, 이 표는 왜 그렇게 나눴는지를 남긴다.
 
+**누가 쓰는가.** 비개발자 학습자가 자기 에이전트에 직접 돌리는 것을 기준으로 설계한다.
+강사는 같은 스킬로 시연한다. 1~2단계는 수업 시간 안에, 3~5단계는 과제 또는 다음 회차로
+가정한다(§2-16). 설명량·질문 수·런타임 의존은 이 기준으로 정한다.
+
 ## 2. 결정 사항
 
 | # | 항목 | 결정 | 근거 |
 |---|---|---|---|
 | 1 | 위치 | `workos/agent-to-webapp/` 루트 직속, 자체 git repo | WorkOS 규칙: 루트 직속 = 자체 repo 를 가진 독립 제품. 교육에 배포할 것 |
 | 2 | 스코프 | 프로젝트 스코프 `.claude/skills/agent-to-webapp/` 에서 먼저 만들고, 완성되면 `~/.claude/skills/agent-to-webapp/` 로 복사 설치 | 대상이 다른 폴더의 로컬 에이전트라 유저 스코프가 맞다. 개발은 한 폴더에서 |
-| 3 | 대상 | 스킬은 **지금 열린 프로젝트를 전환 대상 에이전트로 간주** 한다 | 유저 스코프 스킬은 대상 프로젝트 안에서 불린다 |
+| 3 | 대상 지정 | 스킬은 **작업 폴더 `<이름>-app/` 에서 부른다**. 대상은 `/agent-to-webapp ../<이름>` 처럼 인자로 주고, 없으면 스킬이 묻는다. `STATUS.md` 에 `target` 과 `runtime` 을 기록한다 | 대상 안에서 부르면 대상의 CLAUDE.md 가 2~5단계 세션을 오염시킨다. 작업 폴더에서 부르면 대상은 무변경이고 Codex 대상도 자연스럽다 |
 | 4 | 범위 | 관찰·판정·고정·재검증·전환 다섯 단계. 배포 확인 체크리스트까지 | 스킬 이름이 가리키는 곳까지 |
-| 5 | 구조 | 단일 SKILL.md + 단계 게이트. 커맨드 분할과 서브에이전트 파이프라인은 안 한다 | 1단계가 사람이 에이전트를 세 번 돌리는 일이라 자동 파이프라인이 성립하지 않는다 |
-| 6 | 산출물 위치 | 대상 프로젝트 안 `a2w/` 한 폴더 | 대상 프로젝트의 다른 파일을 건드리지 않는다. 폴더명은 열린 항목(§14) |
-| 7 | 게이트 | `scripts/check_phase.py` 가 단계마다 종료코드로 답한다. 통과 전에는 다음 단계로 못 간다 | 검증 없이 완료 선언 금지 |
-| 8 | 웹 앱 위치 | 형제 폴더 `../<이름>-app/`, 자체 repo | 중첩 저장소 금지, Vercel Root Directory, 클라우드 에이전트의 통째 clone. 선례 `litigation-writer-app` |
-| 9 | 스택 | 기본 Next.js + Supabase + Vercel. `--stack starter` 로 `vibecoding-workshop-starter`(Codex Sites·vinext·D1) 를 표기만 | 본인 기본값이 Next.js. 바꿀 이유 없음 |
-| 10 | 재검증 언어 | TypeScript, Node 에서 바로 실행되는 단독 스크립트, Anthropic SDK | 웹 앱과 다른 언어로 검증하면 검증이 절반만 된다 |
-| 11 | 훅 기록 | PostToolUse 훅은 선택 설치 | 교육에서는 자기 보고만으로 충분. 훅은 무엇을 했는지를, 자기 보고는 왜 그랬는지를 남긴다 |
-| 12 | 원격 | `--batch` 면 질문 없이 진행 | 원격 채널에서는 질문하지 않는다 |
+| 5 | 구조 | 단일 SKILL.md + 단계 게이트. 다섯 단계 전체를 서브에이전트 파이프라인으로 자동화하지 않는다. **2단계 판정만 서브에이전트** 가 새 컨텍스트에서 한다 | 1단계가 사람이 에이전트를 세 번 돌리는 일이라 자동 파이프라인이 성립하지 않는다. 판정은 자기 실행을 자기가 평가하는 일이라 새 눈이 필요하다 |
+| 6 | 산출물 위치 | `<이름>-app/docs/agent-to-webapp/` 한 폴더. **대상 프로젝트의 git 추적 파일은 건드리지 않는다.** 1단계에 필요한 로컬 전용 파일만 대상에 둔다(§4-1) | 대상 무변경. `docs/` 는 create-next-app 이 비어 있지 않은 폴더에서 허용하는 이름이라 5단계와 충돌하지 않는다 |
+| 7 | 게이트 | `scripts/check_phase.mjs` 가 단계마다 종료코드로 답한다. **STATUS 는 스크립트가 통과 시 직접 쓴다.** 2·3단계는 사람 승인을 STATUS 에 기록해야 통과(`--batch` 면 생략). 2단계는 배정표에 4번째 칸 항목이 있으면 `고정 가능` 을 거부한다. 사람이 판정을 뒤집을 수 있고 사유를 STATUS 에 남긴다 | 검증 없이 완료 선언 금지. 모델이 통과를 선언만 하고 넘어가는 경로를 막는다 |
+| 8 | 웹 앱 위치 | 작업 폴더가 곧 웹 앱 repo. `../<이름>-app/`, 자체 repo. 스킬이 시작 때 `git init` 한다. 5단계 스캐폴드는 `docs/` 까지만 | 중첩 저장소 금지, Vercel Root Directory, 클라우드 에이전트의 통째 clone. 선례 `litigation-writer-app`. 형제가 둘이면 충분하다 |
+| 9 | 스택 | Next.js + Vercel. Supabase 는 조건부(§4-5). `--stack` 옵션은 없다 | 본인 기본값이 Next.js. 스타터 표기는 뜻이 불분명하고 브리프 항목과 충돌해 뺐다 |
+| 10 | 재검증 언어 | TypeScript, Node 24 에서 `node run.ts` 로 바로 실행되는 단독 스크립트(`tsx` 불필요), Anthropic SDK. 기본 모델 `claude-sonnet-5`, 환경변수로 변경. `child_process` 로 Python 을 부르지 않는다 | 웹 앱과 다른 언어로 검증하면 검증이 절반만 된다. Vercel 에서 안 도는 것을 로컬에서 되게 하면 검증이 아니다 |
+| 11 | 훅 기록 | Claude Code 대상은 PostToolUse 훅을 **기본 설치**(끌 수 있다). Codex 대상은 `.codex/hooks.json` 을 시도하고, 페이로드가 다르면 자기 보고만으로 후퇴한다 | 판정 서브에이전트가 자기 보고를 실제 도구 호출과 대조하려면 훅 기록이 있어야 한다. 훅은 무엇을 했는지를, 자기 보고는 왜 그랬는지를 남긴다 |
+| 12 | 원격 | `--batch` 면 질문 없이 진행. 사람 승인 게이트도 생략 | 원격 채널에서는 질문하지 않는다 |
 | 13 | 고정 불가 | 2단계에서 종료. Agent SDK + 별도 서버 트랙으로 라우팅 안내만 한다 | 우하단 칸은 이 스킬의 대상이 아니다 |
-| 14 | 도착지 판정 | 정식 라우팅 단계는 두지 않는다. 1단계 시작 전 한 줄 확인("웹 앱이 도착지인가, 플러그인·cron·Slack 봇이 아닌가")만 | 웹 앱을 유일한 도착지로 두면 로컬 에이전트로 충분한 일까지 앱으로 만들게 된다. 그러나 이 스킬은 웹 앱이 도착지로 정해진 뒤에 부르는 것이다 |
+| 14 | 도착지 판정 | 정식 라우팅 단계는 두지 않는다. 시작 때 한 줄 확인("웹 앱이 도착지인가, 플러그인·cron·Slack 봇이 아닌가")만 | 웹 앱을 유일한 도착지로 두면 로컬 에이전트로 충분한 일까지 앱으로 만들게 된다. 그러나 이 스킬은 웹 앱이 도착지로 정해진 뒤에 부르는 것이다 |
+| 15 | 대상 런타임 | **Claude Code 와 Codex 둘 다** 대상이다. 표식은 `CLAUDE.md`·`.claude/skills/` 와 `AGENTS.md`·`.agents/skills/`. 둘 다 있으면 묻는다. 스킬 자체는 Claude Code 에서만 실행한다 | 위키가 로컬 에이전트를 Claude Code·Codex 로 정의하고, 데모 풀의 상당수가 Codex 기반이다. 판정 서브에이전트와 사람 승인 질문이 Claude Code 도구에 묶여 있다 |
+| 16 | 사용자·시간 | 학습자 기준. 1~2단계 수업 중, 3~5단계 과제 | §1 |
+| 17 | 프롬프트 정본 | 실행판은 `references/prompts.md`. 위키는 원문과 개념을 보존하고 "실행판은 agent-to-webapp 스킬" 한 줄을 단다 | 실행판은 경로·고정 헤딩·JSON 필수·4번째 칸 규칙이 원문과 다르다. 바뀔 때마다 위키를 고치면 위키가 스킬 매뉴얼이 된다 |
 
 ## 3. 용어
 
 | 용어 | 뜻 |
 |---|---|
-| 로컬 에이전트 | Claude Code·Codex 위에서 CLAUDE.md·Skills·훅으로 만든 개인 도구. 모델이 순서를 정하고 스크립트를 부른다. 에이전트 로직의 프로토타입 |
+| 로컬 에이전트 | Claude Code·Codex 위에서 CLAUDE.md(AGENTS.md)·Skills·훅으로 만든 개인 도구. 모델이 순서를 정하고 스크립트를 부른다. 에이전트 로직의 프로토타입 |
+| 대상 | 전환할 로컬 에이전트 프로젝트. `STATUS.md` 의 `target` |
+| 런타임 | 대상이 도는 도구. `claude-code` 또는 `codex`. `STATUS.md` 의 `runtime` |
+| 작업 폴더 | `<이름>-app/`. 스킬을 부르는 곳이자 산출물이 쌓이는 곳이자 나중의 웹 앱 repo |
 | 웹 앱 | 남이 쓰는 제품. 코드가 순서를 정하고 정해진 단계에서 모델을 부른다 |
 | 고정 | 실행마다 달랐던 판단을 규칙으로 바꾸고 순서를 못 박는 것 |
 | 2×2 표 | 단위 작업·워크플로우 × 결정론·확률론. 우하단(워크플로우 × 확률론)만 에이전트, 나머지 셋은 워크플로우. LLM 판단이 들어 있어도 순서가 고정이면 워크플로우다 |
 | 세 축 | 제어권(코드/모델) · 도구(도메인 도구만/파일·쉘·코드 실행) · 환경(서버리스/장기 실행). 구현 수단을 정한다 |
-| 게이트 | 단계를 통과했는지 스크립트가 판정하는 지점 |
-| 브리프 | 5단계가 만드는 웹 앱 전환 지시문. 형제 폴더의 첫 세션이 읽는다 |
+| 게이트 | 단계를 통과했는지 스크립트가 판정하는 지점. 통과하면 스크립트가 STATUS 에 쓴다 |
+| 사람 승인 | 2·3단계에서 학습자가 산출물을 읽고 동의하는 지점. 스킬이 묻고 STATUS 에 기록한다 |
+| 브리프 | 5단계가 만드는 웹 앱 전환 지시문. 같은 폴더의 다음 세션이 읽는다 |
 
 ## 4. 다섯 단계
 
-각 단계를 입력 → 할 일 → 산출물 → 게이트로 적는다. 프롬프트 원문은 §7.
+각 단계를 입력 → 할 일 → 산출물 → 게이트로 적는다. 프롬프트 원문은 §7. 게이트 명령은
+`node <스킬>/scripts/check_phase.mjs <N>` 이고 작업 폴더에서 실행한다.
+
+### 시작
+
+- 작업 폴더가 없으면 만들고 `git init` 한다. `docs/agent-to-webapp/STATUS.md` 를 만든다
+- 대상을 인자에서 읽거나 묻는다. 런타임을 표식으로 판별한다(§2-15)
+- 도착지 한 줄 확인(§2-14). `--batch` 면 생략
+- STATUS 가 이미 있으면 읽고 통과한 다음 단계부터 시작한다(재개 규칙)
 
 ### 1단계 관찰
 
-- 입력: 대상 프로젝트(`CLAUDE.md` 또는 `.claude/skills/` 가 있는 폴더), 서로 다른 입력 3종(쉬움·보통·예외)
-- 할 일: 기록 프롬프트(§7-1)를 CLAUDE.md 에 넣거나 매 요청 끝에 붙인다. 에이전트를 3회 이상 돌린다. 각 회의 입력을 `a2w/runs/inputs/` 에 보관한다. 훅 기록을 원하면 `assets/hooks.example.json` 을 `.claude/settings.local.json` 에 합친다
-- 산출물: `a2w/runs/run-N.md`(자기 보고). 선택 `a2w/runs/run-N.tools.jsonl`
-- 게이트: run 파일 3개 이상, inputs 3개 이상, 각 run 에 "판단이 필요했던 지점" 절 존재
+- 입력: 대상, 서로 다른 입력 3종(쉬움·보통·예외). **입력 3종은 스킬이 대상의 CLAUDE.md
+  (AGENTS.md)와 skills 를 읽고 제안하고 학습자가 승인하거나 바꾼다.** 왜 그 셋인지
+  `runs/inputs/README.md` 에 적는다. 비개발자는 "예외" 가 무엇인지 모르기 때문이다
+- 할 일: 대상에 로컬 전용 파일을 설치한다. 그리고 **스킬은 여기서 멈춘다.** 학습자가 대상
+  폴더에서 **새 세션을 3개** 열어 한 번에 하나씩 돌린 뒤 작업 폴더에서 스킬을 다시 부른다
 
-한 번 돌려서는 고정 여부를 알 수 없다. 입력을 일부러 다르게 하는 이유가 그것이다.
+  | | Claude Code 대상 | Codex 대상 |
+  |---|---|---|
+  | 기록 프롬프트(§7-1) | `CLAUDE.local.md` | `AGENTS.override.md` |
+  | 훅 | `.claude/settings.local.json` 의 PostToolUse → `log_tool_use.mjs` | `.codex/hooks.json` 의 PostToolUse → 같은 스크립트 |
+  | 작업 폴더 쓰기 허용 | 같은 파일의 `permissions.additionalDirectories` 에 `../<이름>-app` | `[sandbox_workspace_write] writable_roots` |
+
+  세 파일 모두 git 추적 대상이 아니다. `CLAUDE.local.md` 는 `.gitignore` 에 없으면 untracked
+  로 보이기만 하니 학습자에게 알린다. 5단계 통과 후 제거를 안내한다
+- 산출물: `runs/run-N.md`(자기 보고, 헤딩 고정), `runs/run-N.tools.jsonl`(훅 기록)
+- 게이트: run 파일 3개 이상, inputs 3개 이상 + README, 각 run 에 `## 판단이 필요했던 지점`
+  헤딩 존재. 헤딩 문자열은 기록 프롬프트가 지정하고 게이트가 그대로 찾는다
+
+한 번 돌려서는 고정 여부를 알 수 없다. 입력을 일부러 다르게 하는 이유가 그것이다. 새
+세션에서 돌리는 이유는 스킬 컨텍스트가 있는 세션에서 돌리면 에이전트 행동이 바뀌어 관찰이
+오염되기 때문이다.
 
 ### 2단계 판정
 
-- 입력: `a2w/runs/` 전체
-- 할 일: 판정 프롬프트(§7-2). 마지막 두 줄(억지로 고정 가능하다고 하지 말 것)은 삭제 금지. 모델은 기본적으로 가능하다고 답하는 쪽으로 기울어서 반대 의견을 낼 여지를 명시적으로 줘야 한다
-- 산출물: `a2w/verdict.md` — 같았던 단계, 달랐던 단계(무엇이·왜), 2×2 배정표, 판정 한 줄
-- 게이트: 판정 줄이 `고정 가능` / `조건부 고정 가능` / `고정 불가` 중 하나. **고정 불가면 STATUS 에 종료를 적고 멈춘다.** 라우팅 안내: Agent SDK 를 Vercel 밖 컨테이너에 두거나 Managed Agents. 선례 `workos/litigation-writer-app`
+- 입력: `runs/` 전체, `runs/inputs/`, 대상의 CLAUDE.md(AGENTS.md)와 skills
+- 할 일: **서브에이전트** 에게 판정 프롬프트(§7-2)와 입력을 준다. 대상의 CLAUDE.md·skills 는
+  "하기로 한 것", runs 는 "실제로 한 것" 으로 역할을 표시한다. 훅 기록이 있으면 자기 보고와
+  대조하게 한다. 프롬프트 마지막 두 줄(억지로 고정 가능하다고 하지 말 것)은 삭제 금지 —
+  모델은 기본적으로 가능하다고 답하는 쪽으로 기울어서 반대 의견을 낼 여지를 명시적으로
+  줘야 한다
+- 산출물: `verdict.md` — 같았던 단계, 달랐던 단계(무엇이·왜), 2×2 배정표(칸 열 고정), 판정
+  한 줄
+- 게이트: 판정 줄이 `고정 가능` / `조건부 고정 가능` / `고정 불가` 중 하나. **배정표에
+  4번째 칸(워크플로우 × 확률론) 항목이 하나라도 있으면 `고정 가능` 은 거부** 하고 `조건부`
+  또는 `불가` 만 받는다. 학습자가 verdict 를 읽고 승인해야 통과. 판정을 뒤집으려면 STATUS
+  에 `override: <사유>` 를 남긴다. **고정 불가면 STATUS 에 종료를 적고 멈춘다.**
+
+라우팅 안내: Agent SDK 를 Vercel 밖 컨테이너에 두거나 Managed Agents. 선례
+`workos/litigation-writer-app`. Agent SDK 는 `settingSources` 를 생략하면 CLI 와 같이
+CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었다가 되돌려짐). 배포 앱에서는
+`settingSources: []` 로 격리하고 필요한 것만 명시한다.
 
 ### 3단계 고정
 
-- 입력: `a2w/verdict.md`
-- 할 일: 고정 프롬프트(§7-3). 조건부면 조건을 명세 첫머리에 적는다
-- 산출물: `a2w/workflow.md` — 단계마다 번호·이름, 실행 주체(코드/LLM), 입출력(가능하면 JSON), LLM 단계의 프롬프트 초안, 코드 단계의 규칙, 실패 처리, 사람 확인 지점
-- 게이트: 모든 단계에 실행 주체·입력·출력·실패 처리 필드. `규칙화 불가` 항목은 이유와 함께 목록화
+- 입력: `verdict.md`
+- 할 일: 고정 프롬프트(§7-3). 조건부면 조건을 명세 첫머리에 적는다. **단계 간 데이터는 JSON
+  스키마 필수** — "가능하면" 이 아니다. 4단계가 이 스키마를 그대로 쓴다
+- 산출물: `workflow.md` — 단계마다 번호·이름, 실행 주체(코드/LLM), 입출력 JSON 스키마, LLM
+  단계의 프롬프트 초안, 코드 단계의 규칙, 실패 처리, 사람 확인 지점
+- 게이트: 모든 단계에 실행 주체·입력 스키마·출력 스키마·실패 처리 필드. `규칙화 불가` 항목은
+  **각각 LLM 단계(단위 작업 × 확률론) 또는 사람 확인 지점으로 재배치** 돼야 통과. 순서 자체가
+  흔들리는 항목이면 2단계로 돌아가 재판정한다(STATUS 를 되돌린다). 학습자가 workflow.md
+  를 읽고 승인해야 통과
 
 이 `workflow.md` 가 설계서다. 이것이 있어야 4단계의 스크립트와 5단계의 웹 앱이 같은 것을
 가리킨다.
 
 ### 4단계 재검증
 
-- 입력: `a2w/workflow.md`, `a2w/runs/inputs/`
-- 할 일: 재검증 프롬프트(§7-4). Node 단독 스크립트, 웹 앱 뼈대 금지. "Next.js 로 짜라" 가 아니라 "TypeScript 로, Node 에서 바로 실행되는 단독 스크립트로" 다 — 이 구분이 없으면 Claude Code 가 이 단계에서 웹 앱 뼈대를 만들어 버린다
-- 산출물: `a2w/verify/` — 단계당 함수 하나(`steps/`), `run.ts`, `package.json`, `report.md`(입력 3개의 결과와 로컬 에이전트 결과의 차이)
-- 게이트: `report.md` 에 3건 결과. 파이썬 전용 의존이 나온 단계는 `외부 서비스로 뺄 단계` 로 표시. 차이가 허용 범위인지는 사람이 판단한다
+- 입력: `workflow.md`, `runs/inputs/`
+- 할 일: 재검증 프롬프트(§7-4). Node 단독 스크립트, 웹 앱 뼈대 금지. "Next.js 로 짜라" 가
+  아니라 "TypeScript 로, Node 에서 바로 실행되는 단독 스크립트로" 다 — 이 구분이 없으면
+  Claude Code 가 이 단계에서 웹 앱 뼈대를 만들어 버린다. Node 24 는 `.ts` 를 직접 실행하므로
+  `tsx` 가 필요 없다. 모델은 `A2W_MODEL`, 기본 `claude-sonnet-5`. 사람 확인 지점은 자동
+  승인으로 지나가고 report 에 "여기서 사람이 봤어야 할 것" 절을 남긴다. Python 이나 Codex
+  전용 도구(`@oai/artifact-tool` 같은 것)에 묶인 단계는 TS 재작성을 먼저 시도하고, 안 되면
+  `외부 서비스로 뺄 단계` 로 표시한다. `child_process` 로 Python 을 부르는 것은 금지 —
+  Vercel 에서 안 도니 검증이 안 된다
+- 산출물: `verify/` — 단계당 함수 하나(`steps/`), `run.ts`, `package.json`, `.gitignore`
+  (node_modules), `report.md`(입력 3개의 결과와 로컬 에이전트 결과의 차이, 사용한 모델명,
+  외부 서비스로 뺄 단계 목록)
+- 게이트: `report.md` 에 3건 결과, 모델명, 외부 서비스 절(비어 있어도 절은 있어야 한다).
+  차이가 허용 범위인지는 사람이 판단한다
 
 어떤 단계가 파이썬 전용 라이브러리 없이는 안 된다고 나오면 그것은 문제가 아니라 정보다.
-그 단계는 Vercel 위에서도 안 돌아간다는 뜻이니, 웹 앱을 만들기 전에 알게 된 것이다.
+그 단계는 Vercel 위에서도 안 돌아간다는 뜻이니, 웹 앱을 만들기 전에 알게 된 것이다. 로컬
+에이전트가 Opus 로 돌았고 스크립트가 Sonnet 이면 차이의 원인이 모델인지 고정인지 구분해야
+하므로 report 에 모델명을 남긴다.
 
 ### 5단계 전환
 
-- 입력: `a2w/workflow.md`, `a2w/verify/`
-- 할 일: `references/port-brief-template.md` 로 `a2w/port-brief.md` 를 만든다. 형제 폴더 `../<이름>-app/` 을 만들고 `docs/port-brief.md`, `docs/workflow.md`, `src/lib/workflow/`(verify 의 `steps/` 복사)를 넣는다. 그 폴더에서 새 세션을 열어 전환 프롬프트(§7-5)로 바이브 코딩을 시작한다
-- 산출물: `a2w/port-brief.md`, `../<이름>-app/` 스캐폴드
-- 게이트: 브리프에 다음 다섯 가지가 명시돼 있다
+- 입력: `workflow.md`, `verify/`
+- 할 일: `references/port-brief-template.md` 로 `port-brief.md` 를 만든다. 스캐폴드는 여기까지다
+  — 산출물이 이미 `docs/agent-to-webapp/` 에 있으므로 폴더를 더 만들지 않는다. 대상의 로컬
+  전용 파일 제거를 안내한다. **같은 폴더에서 새 세션을 열어** 전환 프롬프트(§7-5)로 바이브
+  코딩을 시작한다. 그 세션이 `create-next-app` 을 돌리고(`docs/`·`.git` 은 허용 목록에 있다)
+  `docs/agent-to-webapp/verify/steps/` 를 `src/lib/workflow/` 로 복사한다
+- 산출물: `port-brief.md`
+- 게이트: 브리프에 다음 일곱 가지가 명시돼 있다
   1. Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만
   2. Vercel 함수는 실행 시간 제한이 있으니 오래 걸리는 단계는 나눈다
-  3. 단계별 상태는 Supabase 에 저장하고 큐·cron 으로 이어 붙인다
-  4. `workflow.md` 의 사람 확인 지점은 UI 승인 단계 + DB 상태로
-  5. 배포 후 `runs/inputs/` 3개를 다시 넣어 `verify/report.md` 와 비교한다(`references/deploy-checklist.md`)
+  3. 상태 저장 방식. **사람 확인 지점이 있거나 단계 합이 시간 제한을 넘으면** Supabase 에
+     단계별 상태를 저장하고 큐·cron 으로 이어 붙인다. 둘 다 아니면 DB 없이 Route Handler
+     하나로 끝낸다. 브리프가 어느 쪽인지 적는다
+  4. `workflow.md` 의 사람 확인 지점은 UI 승인 단계 + DB 상태로(3 이 Supabase 인 경우)
+  5. `외부 서비스로 뺄 단계` 목록과 각각의 임시 처리. 없으면 "없음"
+  6. 인증·멀티테넌트는 범위 밖(단일 사용자 데모)임을 명시
+  7. 배포 후 `runs/inputs/` 3개를 다시 넣어 `verify/report.md` 와 비교한다
+     (`references/deploy-checklist.md`)
 
 4단계를 통과했으면 이 단계는 이식이다. 에이전트 설계 문제는 끝났고 웹 개발 문제만 남는다.
 
 ### 재개 규칙
 
-`a2w/STATUS.md` 에 통과한 단계와 날짜를 적는다. 스킬이 불리면 STATUS 를 먼저 읽고 그 다음
-단계부터 시작한다. 컨텍스트 압축 뒤에도 같다. 파이프라인 절대 준수 — 게이트를 건너뛰고
-다음 단계를 실행하지 않는다.
+`docs/agent-to-webapp/STATUS.md` 는 게이트 스크립트가 쓰고 읽는다. `target`, `runtime`,
+통과한 단계와 날짜, 승인, override, 종료 사유를 담는다. 스킬이 불리면 STATUS 를 먼저 읽고
+그 다음 단계부터 시작한다. 컨텍스트 압축 뒤에도 같다. 파이프라인 절대 준수 — 게이트를
+건너뛰고 다음 단계를 실행하지 않는다.
 
 ## 5. 산출물 폴더
 
 ```
-<대상 에이전트 프로젝트>/
-  a2w/
-    STATUS.md                통과한 단계와 날짜. 재개 기준점
-    runs/
-      inputs/                실행 3회의 입력 (쉬움·보통·예외)
-      run-1.md               자기 보고 (프롬프트 1)
-      run-1.tools.jsonl      PostToolUse 훅 기록 (선택)
-    verdict.md               2×2 배정표 + 판정 (프롬프트 2)
-    workflow.md              고정 워크플로우 명세 (프롬프트 3)
-    verify/                  TypeScript 단독 스크립트 (프롬프트 4)
-      package.json
-      run.ts
-      steps/
-      report.md
-    port-brief.md            웹 앱 전환 브리프 (5단계)
+<부모>/
+  <이름>/                          대상. git 추적 파일 무변경
+    CLAUDE.local.md                1단계 기록 프롬프트 (Codex 면 AGENTS.override.md). 5단계 후 삭제
+    .claude/settings.local.json    훅 + additionalDirectories (Codex 면 .codex/hooks.json + writable_roots)
+  <이름>-app/                      작업 폴더이자 웹 앱 repo. 스킬은 여기서 부른다
+    .git/                          시작 때 스킬이 init
+    docs/agent-to-webapp/
+      STATUS.md                    target·runtime·통과 단계·승인·override. 스크립트가 쓴다
+      runs/
+        inputs/                    실행 3회의 입력 (쉬움·보통·예외) + README.md (왜 그 셋인지)
+        run-1.md                   자기 보고 (프롬프트 1, 헤딩 고정)
+        run-1.tools.jsonl          PostToolUse 훅 기록
+      verdict.md                   2×2 배정표 + 판정 (프롬프트 2)
+      workflow.md                  고정 워크플로우 명세 (프롬프트 3)
+      verify/                      TypeScript 단독 스크립트 (프롬프트 4)
+        package.json  .gitignore  run.ts  steps/  report.md
+      port-brief.md                웹 앱 전환 브리프 (5단계)
+    (5단계 뒤 새 세션이 create-next-app 으로 채운다. src/lib/workflow/ ← verify/steps/)
 ```
 
 ## 6. 스킬 파일 구조
@@ -145,105 +224,132 @@ workos/agent-to-webapp/
   docs/superpowers/specs/2026-09-11-agent-to-webapp-design.md   이 문서
   docs/superpowers/plans/                writing-plans 산출물
   .claude/skills/agent-to-webapp/        정본. 완성 후 ~/.claude/skills/ 로 복사
-    SKILL.md                             절차·게이트·재개 규칙. 150줄 안쪽
+    SKILL.md                             단계 표·게이트 명령·재개 규칙·대상 판별. 150줄 안쪽
     references/
-      prompts.md                         §7 프롬프트 원문
+      phase-1.md ~ phase-5.md            단계별 세부. 해당 단계에서만 읽는다
+      prompts.md                         §7 실행판 프롬프트 (정본)
       decision-axes.md                   §8 표 넷
-      port-brief-template.md             5단계 브리프 틀
+      port-brief-template.md             5단계 브리프 틀 (선택 절: 스타일 지정)
       deploy-checklist.md                배포 확인
     scripts/
-      check_phase.py                     게이트. python -X utf8. 종료코드 0/1
-      log_tool_use.py                    PostToolUse 훅
+      check_phase.mjs                    게이트. Node 표준 라이브러리만. 종료코드 0/1. STATUS 를 쓴다
+      log_tool_use.mjs                   PostToolUse 훅. Claude Code·Codex 페이로드 분기
     assets/
-      hooks.example.json                 훅 등록 예시
+      hooks.claude.example.json          settings.local.json 에 합칠 훅 + additionalDirectories
+      hooks.codex.example.json           .codex/hooks.json 예시
   examples/                              스킬 검증용 데모 에이전트 (§10)
 ```
 
-`check_phase.py` 는 표준 라이브러리만 쓴다. 파일을 쓸 일이 있으면 `write_bytes` 로 쓴다 —
-LLM-Wiki CLAUDE.md 의 CRLF 주의와 같은 이유다. 이 PC 는 Python 기본 인코딩이 `cp949` 라
-`-X utf8` 이 필수다.
+런타임은 Node 하나다. 학습자는 Next.js 때문에 어차피 Node 를 깔고, Windows 비개발자 PC 에
+Python 은 대개 없다. 스크립트는 파일을 LF·UTF-8 로 쓴다 — LLM-Wiki CLAUDE.md 의 CRLF 주의와
+같은 이유다.
 
-## 7. 프롬프트 원문
+## 7. 프롬프트
 
-1~4 는 위키 페이지에서 그대로 옮겼다. 원출처는 2026-09-07 claude.ai 대화
-(`LLM-Wiki/raw/conversations/2026-09-07_Local-Agent-To-Web-App.md`). 5 는 이 문서에서
-처음 쓰는 초안이다.
+원문은 위키 페이지에 있다. 원출처는 2026-09-07 claude.ai 대화
+(`LLM-Wiki/raw/conversations/2026-09-07_Local-Agent-To-Web-App.md`). 아래는 실행판이고
+원문과 다른 점을 각 프롬프트 뒤에 적는다. 5 는 이 문서에서 처음 쓰는 초안이다.
 
 ### 7-1. 매 실행마다 기록 남기기
 
-CLAUDE.md 에 넣거나 매번 요청 끝에 붙인다. 스킬은 경로를 `a2w/runs/` 로 바꿔 쓴다.
+대상의 `CLAUDE.local.md`(Codex 는 `AGENTS.override.md`)에 넣는다.
 
 ```
-작업을 마친 뒤 runs/run-N.md 파일에 실행 기록을 남겨줘. (N은 순번)
-- 수행한 단계를 순서대로 번호 매겨 적을 것
-- 각 단계에서 사용한 도구, 스크립트, 스킬
+작업을 마친 뒤 ../<이름>-app/docs/agent-to-webapp/runs/run-N.md 파일에 실행 기록을 남겨줘. (N은 순번)
+아래 헤딩을 그대로 써줘.
+## 수행한 단계
+- 순서대로 번호 매겨 적을 것. 각 단계에서 사용한 도구, 스크립트, 스킬
 - 각 단계의 입력과 출력이 무엇이었는지
-- 판단이 필요했던 지점: 무엇을 보고 무엇을 결정했는지, 왜 그렇게 했는지
-- 예상과 달라서 방식을 바꾼 지점이 있으면 그것도 적을 것
+## 판단이 필요했던 지점
+- 무엇을 보고 무엇을 결정했는지, 왜 그렇게 했는지
+## 예상과 달라서 방식을 바꾼 지점
+- 없으면 "없음"
 ```
+
+원문과 다른 점: 경로가 작업 폴더를 가리킨다. 헤딩 세 개를 고정해 게이트가 문자열로 찾는다.
 
 ### 7-2. 고정 가능 여부 판정
 
-세 번 이상 돌린 뒤.
+세 번 이상 돌린 뒤. 서브에이전트에게 준다.
 
 ```
 runs/ 폴더의 실행 기록을 모두 읽고 워크플로우가 고정 가능한지 판정해줘.
+함께 준 CLAUDE.md 와 skills 는 "하기로 한 것" 이고 runs/ 는 "실제로 한 것" 이다.
+run-N.tools.jsonl 이 있으면 run-N.md 의 자기 보고와 대조해서 다른 점을 먼저 적어줘.
 
 1. 모든 실행에서 순서와 방식이 같았던 단계를 나열
 2. 실행마다 달랐던 단계를 나열. 각각에 대해 무엇이 달랐는지(순서가 바뀜 / 단계가 추가·생략됨 / 같은 단계인데 방법이 다름)와 왜 달랐는지
-3. 각 단계를 아래 표에 배정
+3. 각 단계를 아래 표에 배정. 표는 | 단계 | 칸 | 근거 | 세 열이고 칸은 아래 넷 중 하나를 그대로 쓴다
    - 단위 작업 × 결정론: 정해진 규칙으로 고정 출력
    - 단위 작업 × 확률론: 매번 LLM 판단이 필요
    - 워크플로우 × 결정론: 순서가 고정
    - 워크플로우 × 확률론: 순서나 방식 자체가 상황에 따라 재구성됨
 4. 4번째 칸에 해당하는 것이 있으면 명시하고, 규칙으로 바꿀 수 있는지 없는지 의견을 낼 것
 
-최종 판정을 "고정 가능 / 조건부 고정 가능(조건 명시) / 고정 불가" 중 하나로 내줘.
+최종 판정을 "판정: 고정 가능 / 조건부 고정 가능(조건 명시) / 고정 불가" 중 하나로 마지막 줄에 내줘.
+4번째 칸 항목이 하나라도 남아 있으면 "고정 가능" 이라고 하지 말 것.
 억지로 고정 가능하다고 하지 말 것. 고정하면 품질이 떨어질 단계가 있으면 그렇다고 말해줘.
 ```
 
+원문과 다른 점: 설계 의도와 실제의 역할 표시, 훅 기록 대조, 배정표 열과 칸 이름 고정, 판정
+줄 형식 고정, 4번째 칸 규칙 한 줄.
+
 ### 7-3. 워크플로우 고정
 
-판정이 고정 가능일 때.
+판정이 고정 가능 또는 조건부일 때.
 
 ```
 판정 결과를 바탕으로 workflow.md에 고정된 워크플로우 명세를 작성해줘.
+조건부 판정이면 조건을 문서 첫머리에 적어줘.
 
 각 단계마다:
 - 단계 번호와 이름
 - 실행 주체: 코드 / LLM
-- 입력과 출력 (형식까지, 가능하면 JSON 구조로)
+- 입력과 출력. 반드시 JSON 스키마로 적을 것. 다음 단계가 이 스키마를 그대로 쓴다
 - LLM 단계면: 프롬프트 초안, 모델에 넘길 것과 받을 것
 - 코드 단계면: 적용할 규칙
 - 실패했을 때 처리 방법
 
 실행마다 판단이 달랐던 부분은 규칙으로 바꾸는 것을 먼저 시도하고,
-바꿀 수 없으면 "규칙화 불가"로 표시하고 이유를 적어줘.
+바꿀 수 없으면 "규칙화 불가"로 표시하고 이유를 적어줘. 규칙화 불가 항목은 각각
+LLM 단계로 둘지 사람 확인 지점으로 둘지 정해서 적어줘. 순서 자체가 흔들리는 항목이면
+그렇다고 적어줘. 그건 이 단계가 아니라 판정으로 돌아갈 일이다.
 사람이 확인해야 하는 지점이 있으면 그것도 단계로 넣어줘.
 ```
+
+원문과 다른 점: 조건 첫머리, JSON 필수, 규칙화 불가 항목의 재배치 요구.
 
 ### 7-4. 스크립트 작성
 
 ```
-workflow.md의 순서대로 각 단계를 함수 하나로 구현한 TypeScript 스크립트를 작성해줘.
-- Node에서 바로 실행되는 단독 스크립트로. 웹 앱 뼈대는 만들지 말 것
-- LLM 단계는 Anthropic SDK로 호출
-- 단계 사이에 넘기는 데이터는 workflow.md에 정의한 JSON 형식을 그대로 쓸 것
-- 작성 후 runs/에서 썼던 입력 3개로 실행하고, 로컬 에이전트 결과와 비교해서 차이를 보고해줘
+workflow.md의 순서대로 각 단계를 함수 하나로 구현한 TypeScript 스크립트를 verify/ 에 작성해줘.
+- Node 24 에서 node run.ts 로 바로 실행되는 단독 스크립트로. tsx 나 빌드 단계 없이. 웹 앱 뼈대는 만들지 말 것
+- LLM 단계는 Anthropic SDK로 호출. 모델은 환경변수 A2W_MODEL, 기본 claude-sonnet-5
+- 단계 사이에 넘기는 데이터는 workflow.md에 정의한 JSON 스키마를 그대로 쓸 것
+- 사람 확인 지점은 자동 승인으로 지나가되 report.md 에 "여기서 사람이 봤어야 할 것" 절로 남길 것
+- child_process 로 Python 이나 다른 런타임을 부르지 말 것. TS 로 안 되는 단계는 "외부 서비스로 뺄 단계" 로 표시
+- 작성 후 runs/inputs/ 의 입력 3개로 실행하고, 로컬 에이전트 결과와 비교해서 차이를 report.md 에 보고해줘. 사용한 모델명도 적을 것
 ```
+
+원문과 다른 점: Node 24 직접 실행, 모델 지정, 사람 확인 처리, child_process 금지, report 항목.
 
 ### 7-5. 웹 앱 전환 (초안)
 
-형제 폴더 `../<이름>-app/` 의 첫 세션에서 쓴다. 위키에 원문이 없다. 구현 때 다듬는다.
+작업 폴더의 다음 세션에서 쓴다. 위키에 원문이 없다. 구현 때 다듬는다.
 
 ```
-docs/port-brief.md 와 docs/workflow.md 를 읽고 이 워크플로우를 Next.js + Supabase 웹 앱으로 만들어줘.
-- src/lib/workflow/ 의 함수들을 그대로 쓸 것. 로직을 다시 짜지 말 것
+docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽고 이 워크플로우를 Next.js 웹 앱으로 만들어줘.
+- 이 폴더에서 create-next-app 을 먼저 돌릴 것. docs/ 와 .git 은 그대로 둔다
+- docs/agent-to-webapp/verify/steps/ 를 src/lib/workflow/ 로 복사해서 그대로 쓸 것. 로직을 다시 짜지 말 것
 - Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
-- Vercel 함수는 실행 시간 제한이 있으니 오래 걸리는 단계는 나누고, 단계별 상태를 Supabase 에 저장할 것
-- workflow.md 의 사람 확인 지점은 UI 승인 단계로 만들고 승인 상태를 DB 에 남길 것
-- 화면은 입력 → 진행 상태 → 결과 셋이면 충분. 라이트 모드 전용, 악센트 #2563EB, gradient·shadow 금지
+- 상태 저장은 브리프가 정한 대로. Supabase 면 단계별 상태를 저장하고 오래 걸리는 단계는 나눌 것
+- workflow.md 의 사람 확인 지점은 UI 승인 단계로 만들고 승인 상태를 남길 것
+- 인증은 만들지 말 것. 단일 사용자 데모다
+- 화면은 입력 → 진행 상태 → 결과 셋이면 충분
 ```
+
+스타일 지정(라이트 모드, 악센트 색, gradient·shadow 금지 같은 것)은 프롬프트에 두지 않고
+`port-brief-template.md` 의 선택 절로 뺀다. 본인 취향이 배포 스킬에 박히지 않게 한다.
 
 ## 8. 참고 틀 (위키에서 발췌)
 
@@ -302,29 +408,40 @@ Claude API 호출 하나로 분해된다.
 | 선례 | 로컬 에이전트 | 웹 앱 | 비고 |
 |---|---|---|---|
 | 송무서면 | `workos/litigation-writer` | `workos/litigation-writer-app` (Next.js 15 + Supabase + Managed Agents) | §8 셋째 행. 스킬 5종·rules·templates 를 tar.gz 번들로 실어 나른다. 이 스킬의 대상이 아닌 경로의 선례 |
-| 철거 | `.demo-projects/demolition-agent` | `workos/demolition-web-app` | 어느 행인지 미확인. 구현 세션에서 확인 |
-| 워크샵 스타터 | — | `.demo-projects/vibecoding-workshop-starter` (Codex Sites·vinext·D1) | `--stack starter` 의 실체 |
+| 철거 | `.demo-projects/demolition-agent` | `workos/demolition-web-app` (Next.js 16 + Firebase) | §8 첫 행이되 실행이 Vercel 밖. Next.js 는 업로드·트리거·진행 표시만 하고 Claude 를 직접 부르지 않는다. 모델 호출은 Firebase Cloud Functions 의 Python 이 Messages API 로 한다. 4단계가 말하는 `외부 서비스로 뺀 단계` 의 실물 선례 |
 
 `litigation-writer-app/CLAUDE.md` 가 형제 분리의 이유를 이미 적어 뒀다. 에이전트
 프로젝트는 별도 저장소가 canonical 이고 앱 저장소에는 그 소스를 두지 않는다. Vercel 배포는
 Root Directory 하나를 보고, 클라우드 에이전트는 저장소를 통째로 clone 한다. WorkOS 의 중첩
-저장소 금지 규칙도 같은 방향이다. 이 스킬의 5단계는 그 규칙을 그대로 따른다.
+저장소 금지 규칙도 같은 방향이다. 이 스킬의 작업 폴더가 곧 앱 repo 인 것은 그 규칙을
+그대로 따르면서 형제를 둘로 줄인 것이다.
 
 ## 10. 스킬 자체의 검증
 
 `examples/` 에 데모 에이전트를 두고 스킬을 끝까지 돌린다. 경로 둘을 다 밟아야 한다.
 
-| 경로 | 성공 기준 |
-|---|---|
-| 고정 가능 | 1~5단계 게이트를 전부 통과하고 형제 `-app/` 폴더가 스캐폴드된다. `verify/report.md` 의 3건이 로컬 결과와 허용 범위 안에서 일치한다 |
-| 고정 불가 | 2단계에서 멈추고 STATUS 에 종료가 적히며 Agent SDK 트랙 안내가 나온다. 3단계 이후 파일이 생기지 않는다 |
+| 경로 | 데모 | 성공 기준 |
+|---|---|---|
+| 고정 가능 | `rfq-quote-generator` | 1~5단계 게이트를 전부 통과하고 `examples/rfq-quote-generator-app/docs/agent-to-webapp/` 이 채워진다. `verify/report.md` 의 3건이 로컬 결과와 허용 범위 안에서 일치한다 |
+| 고정 불가 | `competitor-review-crawler` | 2단계에서 멈추고 STATUS 에 종료가 적히며 Agent SDK 트랙 안내가 나온다. 3단계 이후 파일이 생기지 않는다 |
 
-후보는 `.demo-projects` 에서 고른다. 아래는 이름만 보고 짐작한 것이라 내용 확인이 먼저다.
+후보는 `.demo-projects` 를 읽고 골랐다(2026-09-11 조사).
 
-- 고정 가능 쪽 추정: `exam-score-aggregator`, `weekly-report-guess`, `email-issue-brief`, `rfq-quote-generator`
-- 고정 불가 쪽 추정: `competitor-review-crawler`, `instagram-monitor` (사이트마다 다른 수집 코드를 설계하는 우하단 예시에 가깝다)
+- `rfq-quote-generator`: RFQ 이메일 PDF + 도면 PDF → 공정 판정·원가·견적 xlsx·한중영 회신
+  초안. Step 0~7 이 순차 고정, 의존은 openpyxl 뿐, PDF 독해는 모델의 Vision. 스킬 4개.
+  샘플 입력은 `input/NovaDrive/` 한 건이라 **두 건을 합성** 한다(다른 부품, 치수가 빠진
+  도면 같은 예외). 합성이라고 `runs/inputs/README.md` 에 적는다
+- `competitor-review-crawler`: 도메인마다 모델이 런타임에 DOM 셀렉터를 새로 매핑하고 sanity
+  check 결과로 경로가 갈린다. captcha 면 브라우저 핸드오프. 우하단의 전형. 2단계에서 멈추는
+  경로라 3회 관찰만 하면 된다
+- 걸러진 후보: `exam-score-aggregator` 는 고정 가능이지만 `@oai/artifact-tool` 이 Codex
+  런타임 전용이라 Claude Code 에서 그대로 못 돌린다. `email-issue-brief` 는 입력이 Gmail
+  커넥터라 3종 재현이 어렵다. `instagram-monitor` 는 불가가 아니라 조건부(수집·필터·렌더는
+  스크립트 고정, 분석 문장만 모델)
 
-`.demo-projects` 에서 가져올 때는 사본이다. 원본은 두고 `.git` 없이 복사한다.
+`.demo-projects` 에서 가져올 때는 사본이다. 원본은 두고 `.git` 없이 복사한다. `examples/`
+안의 `<이름>-app/` 은 `docs/` 만 두고 `.git` 을 만들지 않는다(중첩 저장소 금지). dogfood
+산출물은 커밋해서 학습자가 보는 완성 예시로 쓴다.
 
 실습 시행착오는 `LLM-Wiki/raw/practice/YYYY-MM-DD_주제.md` 로 먼저 쓰고 `/wiki-ingest` 로
 컴파일한다. 위키에 직접 쓰지 않는다.
@@ -332,9 +449,12 @@ Root Directory 하나를 보고, 클라우드 에이전트는 저장소를 통�
 ## 11. 범위 밖
 
 - Agent SDK·Managed Agents 경로의 구현. 2단계에서 라우팅 안내까지만
-- 웹 앱 자동 생성. 5단계는 브리프와 스캐폴드까지고, 바이브 코딩은 형제 폴더의 새 세션이 한다
+- 웹 앱 자동 생성. 5단계는 브리프까지고, 바이브 코딩은 같은 폴더의 다음 세션이 한다
 - 3입력 비교 이상의 eval. 품질 평가는 `eval-and-improvement/` 위키 페이지들의 몫
 - n8n·Slack 봇·플러그인 배포 같은 다른 도착지. 이 스킬은 웹 앱이 도착지로 정해진 뒤에 부른다
+- 스킬 자체를 Codex 에서 실행하는 것(`.agents/skills/` 설치). 대상이 Codex 인 것과 다르다
+- 인증·멀티테넌트. 브리프에 범위 밖으로 명시한다
+- 다른 스택(`vibecoding-workshop-starter` 의 Codex Sites·D1 등)
 
 ## 12. 근거
 
@@ -349,18 +469,43 @@ Root Directory 하나를 보고, 클라우드 에이전트는 저장소를 통�
 - `C:\Users\byung\workos\litigation-writer-app\CLAUDE.md` — 형제 repo 분리의 이유
 - `C:\Users\byung\workos\CLAUDE.md` — 폴더 분류와 중첩 저장소 금지
 
+grill-me 에서 확인한 외부 사양(2026-09-11):
+
+- code.claude.com/docs/en/skills — 프로젝트 스킬은 하위 폴더에서 열어도 상위로 올라가며 찾는다. 인자는 `$ARGUMENTS`·named arguments 텍스트 치환, 플래그 파서 없음
+- code.claude.com/docs/en/memory — `CLAUDE.local.md` 는 CLAUDE.md 와 함께 자동 로드, `.gitignore` 등록은 수동
+- code.claude.com/docs/en/hooks — PostToolUse stdin 에 `tool_name`·`tool_input`·`tool_response`·`session_id`·`cwd`·`tool_use_id`. `settings.local.json` 등록 가능
+- code.claude.com/docs/en/cli-reference — `--add-dir`, `permissions.additionalDirectories`
+- code.claude.com/docs/en/agent-sdk/migration-guide — `settingSources` 생략 시 CLI 와 같이 전부 로드. v0.1.0 의 변경은 되돌려짐. 격리는 `[]`
+- learn.chatgpt.com/docs/agent-configuration/agents-md — `AGENTS.override.md` 가 레벨마다 우선. `project_doc_fallback_filenames`
+- learn.chatgpt.com/docs/config-file/config-reference — `[hooks]` PreToolUse·PostToolUse, `.codex/hooks.json`, `[sandbox_workspace_write] writable_roots`
+- learn.chatgpt.com/docs/build-skills — Codex 스킬은 `.agents/skills/`(repo)·`~/.agents/skills`(user)
+- vercel/next.js `packages/create-next-app/helpers/is-folder-empty.ts` — 허용 목록에 `docs`·`.claude`·`.git` 있음, `src`·`README.md` 없음 (canary 기준)
+
 ## 13. 다음 세션 착수 순서
 
 1. 이 문서를 읽는다. §2 가 결정의 정본이다
 2. `superpowers:writing-plans` 로 구현 계획을 `docs/superpowers/plans/` 에 쓴다
-3. 구현 순서 제안: `references/`(위키 발췌) → `SKILL.md` → `scripts/check_phase.py` → `examples/` 로 1~4단계 dogfood → `port-brief-template.md`·`deploy-checklist.md` → `log_tool_use.py`·`hooks.example.json`
-4. 두 경로(§10) 모두 통과하면 `~/.claude/skills/agent-to-webapp/` 로 복사하고, 대상 프로젝트 하나에서 유저 스코프 호출을 확인한다
-5. 시행착오를 `raw/practice/` 로 보내 `/wiki-ingest`
+3. 구현 순서 제안: `references/`(prompts·decision-axes·phase-1~5) → `SKILL.md` →
+   `scripts/check_phase.mjs` → `examples/rfq-quote-generator` 로 1~4단계 dogfood →
+   `port-brief-template.md`·`deploy-checklist.md` → `log_tool_use.mjs`·`assets/hooks.*.json` →
+   `examples/competitor-review-crawler` 로 불가 경로 dogfood
+4. 두 경로(§10) 모두 통과하면 `~/.claude/skills/agent-to-webapp/` 로 복사하고, 대상 프로젝트
+   하나에서 유저 스코프 호출을 확인한다
+5. 시행착오를 `raw/practice/` 로 보내 `/wiki-ingest`. 위키 페이지에 "실행판은 agent-to-webapp
+   스킬" 한 줄을 단다
 
 ## 14. 열린 항목
 
-- `a2w/` 폴더명. 짧지만 뜻이 안 보인다. 학습자가 보는 이름이라 구현 전에 정한다
-- `examples/` 후보 선택 (§10). 내용 확인 뒤 각 경로 하나씩
-- Agent SDK 가 파일시스템 설정을 기본으로 로드하지 않아 스킬을 쓰려면 설정 소스를 명시해야 한다는 사양 — 대화 재구성본의 Claude 턴이 말한 것이라 공식 문서 확인이 필요하다. 2단계 라우팅 안내문에만 쓰이므로 급하지 않다
-- 5단계 형제 폴더 스캐폴드를 스킬이 직접 만들지, 브리프만 만들고 사람이 만들지. 초안은 직접 만든다
-- `log_tool_use.py` 를 Python 으로 할지 bash 로 할지. Windows 와 맥미니 둘 다 돌아야 하므로 Python 우선
+- Codex `.codex/hooks.json` 의 PostToolUse stdin 페이로드가 Claude Code 와 같은 필드인지. 문서는
+  "hooks.json 과 같은 이벤트 스키마" 라고만 한다. `log_tool_use.mjs` 의 분기를 구현 때 실측한다
+- `permissions.additionalDirectories` 가 권한 프롬프트 없이 쓰기를 허용하는지 실측. 안 되면
+  1단계 안내에 "쓰기 허용을 한 번 승인" 을 넣는다
+- create-next-app 허용 목록은 canary 기준이다. 구현 때 릴리스 버전으로 확인한다
+- `rfq-quote-generator` 의 합성 입력 2건의 내용. dogfood 착수 때 정한다
+
+## 15. 검토 이력
+
+- 2026-09-11 brainstorming 1라운드: §2 1~14 결정
+- 2026-09-11 grill-me 2라운드(Q1~Q21): 작업 폴더를 대상 밖 `<이름>-app/` 으로, 게이트·훅을
+  Node 로, 2단계를 서브에이전트로, Codex 대상 포함, Supabase 조건부, 프롬프트 실행판 정본화,
+  데모 확정. §14 의 폴더명·examples·Agent SDK·스캐폴드·훅 언어 항목을 닫음
