@@ -506,9 +506,18 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
 - Codex `.codex/hooks.json` 의 PostToolUse stdin 페이로드가 Claude Code 와 같은 필드인지. 문서는
   "hooks.json 과 같은 이벤트 스키마" 라고만 한다. `log_tool_use.mjs` 의 분기를 구현 때 실측한다
 - `permissions.additionalDirectories` 가 권한 프롬프트 없이 쓰기를 허용하는지 실측. 안 되면
-  1단계 안내에 "쓰기 허용을 한 번 승인" 을 넣는다
-- create-next-app 허용 목록은 canary 기준이다. 구현 때 릴리스 버전으로 확인한다
-- `rfq-quote-generator` 의 합성 입력 2건의 내용. dogfood 착수 때 정한다
+  1단계 안내에 "쓰기 허용을 한 번 승인" 을 넣는다. dogfood 는 `bypassPermissions` 로 돌려 실측하지 못했다
+- 고정 불가 경로 dogfood(계획 Task 16)는 크롤링할 URL 을 정하기 전이라 돌리지 않았다. 이 경로는 게이트 단위
+  테스트(2단계 고정 불가 → 종료·라우팅 안내·이후 단계 거부)로만 검증됐다
+- 헤드리스 dogfood 에서는 예외 입력에서 에이전트가 사람에게 묻지 못하고 가정값으로 채웠다. 학습자의 대화형
+  관찰에서는 멈추고 물을 수 있어 판정 분기가 다를 수 있다
+
+구현 중 닫힘(2026-09-11):
+
+- create-next-app 허용 목록: 릴리스 16.3.4 에도 `docs`·`.git`·`.claude` 가 있다(canary 와 같음)
+- `rfq-quote-generator` 합성 입력 2건: 계획 Task 15 에 확정. Helios 는 도면 ND-IS-042 와 사양을 맞췄다
+- Windows Git Bash 에서 `claude -p "/agent-to-webapp …"` 는 MSYS 경로 변환으로 첫 인자가 `C:/Program Files/Git/…`
+  로 바뀐다. 헤드리스로 스킬을 부를 때는 `MSYS_NO_PATHCONV=1` 을 붙인다
 
 ## 15. 검토 이력
 
