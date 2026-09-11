@@ -5,8 +5,10 @@
 ## 1. 전제 확인
 
 - `node --version` 이 24 이상. 아니면 멈추고 알린다(`.ts` 직접 실행이 안 된다)
-- `ANTHROPIC_API_KEY` 가 환경에 있거나 `$A2W/verify/.env` 에 `ANTHROPIC_API_KEY=…` 한 줄로 있다. 둘 다 없으면
-  멈추고, 학습자에게 그 파일을 직접 만들라고 안내한다. 스킬이 키를 받아 적지 않는다. `.env` 는 verify/.gitignore 가 가린다
+- `node $SKILL_DIR/scripts/check_phase.mjs key` 가 0 으로 끝난다. 키는 스킬 폴더의 `.env` 에서 읽는다. 사용자별로 한 번
+  만들면 모든 프로젝트가 다시 쓴다. 이 프로젝트만 다른 키를 쓰려면 `$A2W/verify/.env` 가 덮는다. 1 로 끝나면
+  스크립트가 알려 준 경로에 학습자가 `.env.example` 을 `.env` 로 복사해 키를 넣게 안내하고 멈춘다. 스킬은 키를
+  받아 적지도 파일을 열어 보지도 않는다. 셸 환경변수 경고가 나오면 그대로 전한다
 - 모델은 `A2W_MODEL`, 기본 `claude-sonnet-5`. 로컬 에이전트가 다른 모델이었으면 차이의 원인이 모델일 수
   있으니 report 에 남긴다
 
@@ -23,7 +25,8 @@ $A2W/verify/
   report.md         실행 후 작성
 ```
 
-`cd $A2W/verify && npm install` 뒤 `node --env-file-if-exists=.env run.ts <입력 폴더>` 로 입력 3개를 차례로 돌린다. 웹 앱 뼈대(Next.js,
+`cd $A2W/verify && npm install` 뒤 `check_phase.mjs key` 가 출력한 실행 명령으로 입력 3개를 차례로 돌린다. 그 명령은
+스킬 `.env` 와 `verify/.env` 를 차례로 읽는다. 웹 앱 뼈대(Next.js,
 app/, pages/)를 만들지 않는다. `child_process` 로 Python 을 부르지 않는다. TS 로 안 되는 단계는 report 의
 `## 외부 서비스로 뺄 단계` 에 적고 그 단계는 입력을 그대로 통과시키는 stub 으로 둔다.
 

@@ -17,6 +17,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 - `$APP`: 지금 열린 폴더. `<이름>-app/`. 나중에 웹 앱 repo 가 된다
 - `$A2W`: `$APP/docs/agent-to-webapp`. 산출물은 전부 여기
 - `$TARGET`: 전환할 에이전트 폴더. STATUS 의 `target`
+- 스킬 폴더의 `.env`: 사용자별 API 키. 한 번 만들면 모든 프로젝트가 다시 쓴다. git 에 올리지 않는다
 - 런타임: `claude-code` 또는 `codex`. STATUS 의 `runtime`
 
 ## 원칙
@@ -26,6 +27,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 - 게이트를 통과하기 전에 다음 단계 산출물을 만들지 않는다. 컨텍스트가 압축돼도 STATUS 부터 읽는다
 - 호출 인자에 `--batch` 가 있으면 질문하지 않고, 승인 게이트도 `--batch` 로 넘긴다
 - 학습자에게는 한국어로 말한다. 학습자가 다른 언어로 쓰면 그 언어로 답한다
+- API 키는 스킬이 읽거나 받아 적지 않는다. 있는지는 `check_phase.mjs key` 로만 본다
 
 ## 시작
 

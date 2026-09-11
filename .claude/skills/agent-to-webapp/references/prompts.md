@@ -4,7 +4,7 @@
 여기가 실행판 정본이다. 원문과 다른 점은 각 프롬프트 끝에 적었다. 형식 문자열(헤딩·필드·판정 줄)은
 `scripts/lib/phaseN.mjs` 의 상수와 같아야 하며 게이트가 그 문자열을 그대로 찾는다.
 
-`<APP>` 은 작업 폴더(`<이름>-app/`)의 경로, `<A2W>` 는 `<APP>/docs/agent-to-webapp` 이다.
+`<APP>` 은 작업 폴더(`<이름>-app/`)의 경로, `<A2W>` 는 `<APP>/docs/agent-to-webapp` 이다. `<SKILL_DIR>` 은 이 스킬 폴더다.
 
 ## 프롬프트 1 — 매 실행마다 기록 남기기
 
@@ -85,7 +85,7 @@
 <A2W>/workflow.md 의 순서대로 각 단계를 함수 하나로 구현한 TypeScript 스크립트를 <A2W>/verify/ 에 작성해줘.
 - Node 24 에서 `node run.ts` 로 바로 실행되는 단독 스크립트로. tsx 나 빌드 단계 없이. 웹 앱 뼈대는 만들지 말 것
 - 구성: package.json, .gitignore(node_modules 와 .env), run.ts, steps/<단계>.ts (단계당 함수 하나)
-- 실행은 `node --env-file-if-exists=.env run.ts <입력 폴더>`. API 키는 환경변수나 verify/.env 에서 읽고 코드에 쓰지 말 것
+- 실행은 `node --env-file-if-exists=<SKILL_DIR>/.env --env-file-if-exists=.env run.ts <입력 폴더>`. API 키는 스킬 .env 나 verify/.env 에서 읽힌다. 키를 코드에 쓰지도, .env 파일을 열어 보지도 말 것
 - 의존은 @anthropic-ai/sdk 와 그 단계에 꼭 필요한 순수 JS 패키지만(예: xlsx 생성). Vercel 서버리스에서 안 도는 것(네이티브 바이너리, 브라우저 자동화, Python)은 금지
 - LLM 단계는 Anthropic SDK 로 호출. 모델은 환경변수 A2W_MODEL, 없으면 claude-sonnet-5
 - 단계 사이에 넘기는 데이터는 workflow.md 의 JSON 스키마를 그대로 쓸 것
@@ -101,7 +101,7 @@
   ## 외부 서비스로 뺄 단계  (없으면 - 없음)
 ```
 
-원문과 다른 점: Node 24 직접 실행, 구성 고정, 모델 지정, 사람 단계 처리, child_process 금지, report 절 고정(`REPORT_*`).
+원문과 다른 점: Node 24 직접 실행, 구성 고정, 모델 지정, 사람 단계 처리, child_process 금지, report 절 고정(`REPORT_*`), 키는 스킬 `.env` 에서.
 
 ## 프롬프트 5 — 웹 앱 전환 (초안)
 

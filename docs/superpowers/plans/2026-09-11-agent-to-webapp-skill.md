@@ -2837,6 +2837,9 @@ git commit -m "feat: dogfood 고정 불가 경로 — competitor-review-crawler 
 
 - [ ] **Step 1: 복사 설치**
 
+**실행 중 변경.** 설치는 `node .claude/skills/agent-to-webapp/scripts/install.mjs` 로 한다. 설치된 쪽의 `.env`(사용자
+API 키)를 지우지도 덮지도 않는다. 아래 `rm -rf` 와 `cp -r` 은 쓰지 않는다.
+
 ```bash
 rm -rf ~/.claude/skills/agent-to-webapp
 cp -r .claude/skills/agent-to-webapp ~/.claude/skills/agent-to-webapp

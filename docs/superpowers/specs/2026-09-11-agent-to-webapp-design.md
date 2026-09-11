@@ -53,6 +53,8 @@ Vercel 에 바이브 코딩)가 실습에서 가장 자주 실패하는 케이�
 | 15 | 대상 런타임 | **Claude Code 와 Codex 둘 다** 대상이다. 표식은 `CLAUDE.md`·`.claude/skills/` 와 `AGENTS.md`·`.agents/skills/`. 둘 다 있으면 묻는다. 스킬 자체는 Claude Code 에서만 실행한다 | 위키가 로컬 에이전트를 Claude Code·Codex 로 정의하고, 데모 풀의 상당수가 Codex 기반이다. 판정 서브에이전트와 사람 승인 질문이 Claude Code 도구에 묶여 있다 |
 | 16 | 사용자·시간 | 학습자 기준. 1~2단계 수업 중, 3~5단계 과제 | §1 |
 | 17 | 프롬프트 정본 | 실행판은 `references/prompts.md`. 위키는 원문과 개념을 보존하고 "실행판은 agent-to-webapp 스킬" 한 줄을 단다 | 실행판은 경로·고정 헤딩·JSON 필수·4번째 칸 규칙이 원문과 다르다. 바뀔 때마다 위키를 고치면 위키가 스킬 매뉴얼이 된다 |
+| 18 | API 키 | 사용자별 키를 스킬 폴더의 `.env` 에 둔다. 한 번 만들면 모든 프로젝트의 4단계가 다시 쓰고, 한 프로젝트만 다를 때 `verify/.env` 가 덮는다. `.env` 는 git 에 올리지 않는다(저장소와 스킬 폴더의 `.gitignore`, 테스트로 강제). 설치 스크립트는 설치된 쪽 `.env` 를 지우지 않는다. 스킬은 키를 읽지 않고 `check_phase.mjs key` 가 출처만 답한다. 훅 기록은 키 모양 문자열을 가린다 | 학습자가 프로젝트마다 키를 만들 필요가 없다. 셸 환경변수로 두면 Claude Code 가 구독 대신 그 키로 과금한다(Anthropic 지원 문서) |
+| 19 | 4단계 검증 수단 | 코드가 순서를 정하고 Anthropic API 를 부르는 스크립트로만 한다. 에이전트가 workflow.md 를 따라 하거나 `claude -p` 로 대체하지 않는다 | 에이전트는 빈틈을 판단으로 메워 통과한다(dogfood 2회차의 견적서 수기 보정). API 스크립트만 순서, 스키마 연결, 단계 단독 동작, 실제 소요 시간을 보여 주고, 그 함수가 웹 앱으로 복사된다 |
 
 ## 3. 용어
 
@@ -147,7 +149,7 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
 - 할 일: 재검증 프롬프트(§7-4). Node 단독 스크립트, 웹 앱 뼈대 금지. "Next.js 로 짜라" 가
   아니라 "TypeScript 로, Node 에서 바로 실행되는 단독 스크립트로" 다 — 이 구분이 없으면
   Claude Code 가 이 단계에서 웹 앱 뼈대를 만들어 버린다. Node 24 는 `.ts` 를 직접 실행하므로
-  `tsx` 가 필요 없다. 모델은 `A2W_MODEL`, 기본 `claude-sonnet-5`. 사람 확인 지점은 자동
+  `tsx` 가 필요 없다. 모델은 `A2W_MODEL`, 기본 `claude-sonnet-5`. API 키는 스킬 `.env` 에서 읽는다(§2-18). 사람 확인 지점은 자동
   승인으로 지나가고 report 에 "여기서 사람이 봤어야 할 것" 절을 남긴다. Python 이나 Codex
   전용 도구(`@oai/artifact-tool` 같은 것)에 묶인 단계는 TS 재작성을 먼저 시도하고, 안 되면
   `외부 서비스로 뺄 단계` 로 표시한다. `child_process` 로 Python 을 부르는 것은 금지 —
@@ -225,6 +227,8 @@ workos/agent-to-webapp/
   docs/superpowers/plans/                writing-plans 산출물
   .claude/skills/agent-to-webapp/        정본. 완성 후 ~/.claude/skills/ 로 복사
     SKILL.md                             단계 표·게이트 명령·재개 규칙·대상 판별. 150줄 안쪽
+    .env.example                         사용자별 API 키 틀. 같은 폴더에 .env 로 복사해 채운다
+    .gitignore                           .env 를 가린다
     references/
       phase-1.md ~ phase-5.md            단계별 세부. 해당 단계에서만 읽는다
       prompts.md                         §7 실행판 프롬프트 (정본)
@@ -234,6 +238,7 @@ workos/agent-to-webapp/
     scripts/
       check_phase.mjs                    게이트. Node 표준 라이브러리만. 종료코드 0/1. STATUS 를 쓴다
       log_tool_use.mjs                   PostToolUse 훅. Claude Code·Codex 페이로드 분기
+      install.mjs                        유저 스코프 설치. 설치된 쪽 .env 를 지우지 않는다
     assets/
       hooks.claude.example.json          settings.local.json 에 합칠 훅 + additionalDirectories
       hooks.codex.example.json           .codex/hooks.json 예시
@@ -496,7 +501,7 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
    `scripts/check_phase.mjs` → `examples/rfq-quote-generator` 로 1~4단계 dogfood →
    `port-brief-template.md`·`deploy-checklist.md` → `log_tool_use.mjs`·`assets/hooks.*.json` →
    `examples/competitor-review-crawler` 로 불가 경로 dogfood
-4. 두 경로(§10) 모두 통과하면 `~/.claude/skills/agent-to-webapp/` 로 복사하고, 대상 프로젝트
+4. 두 경로(§10) 모두 통과하면 `~/.claude/skills/agent-to-webapp/` 로 설치하고(`scripts/install.mjs`, 설치된 쪽 `.env` 보존), 대상 프로젝트
    하나에서 유저 스코프 호출을 확인한다
 5. 시행착오를 `raw/practice/` 로 보내 `/wiki-ingest`. 위키 페이지에 "실행판은 agent-to-webapp
    스킬" 한 줄을 단다
@@ -525,3 +530,4 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
 - 2026-09-11 grill-me 2라운드(Q1~Q21): 작업 폴더를 대상 밖 `<이름>-app/` 으로, 게이트·훅을
   Node 로, 2단계를 서브에이전트로, Codex 대상 포함, Supabase 조건부, 프롬프트 실행판 정본화,
   데모 확정. §14 의 폴더명·examples·Agent SDK·스캐폴드·훅 언어 항목을 닫음
+- 2026-09-11 구현 중 사용자 결정: API 키는 스킬 `.env`(§2-18), 4단계는 API 스크립트로만(§2-19)
