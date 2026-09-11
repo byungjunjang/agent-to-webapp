@@ -1074,7 +1074,7 @@ git commit -m "feat: 4단계 재검증 게이트 — verify 구성·report 절"
   - `checkPhase5(a2wDir): { ok, errors, warnings }`
 - 규칙(§4-5): 일곱 절이 모두 있고 비어 있지 않다. `## 3. 상태 저장` 에 `Supabase` 또는 `DB 없음` 이 명시돼 있다. 헤딩 문자열은 Task 11 의 `port-brief-template.md` 와 같아야 한다
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/phase5.test.mjs`:
 
@@ -1133,12 +1133,12 @@ test('phase5: 파일 없으면 실패', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"phase5.test.mjs`
 Expected: FAIL — `Cannot find module '.../lib/phase5.mjs'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs`:
 
@@ -1179,12 +1179,12 @@ export function checkPhase5(a2wDir) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"phase5.test.mjs`
 Expected: PASS 4 tests
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/phase5.test.mjs .claude/skills/agent-to-webapp/scripts/lib/phase5.mjs
