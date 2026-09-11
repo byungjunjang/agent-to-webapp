@@ -707,7 +707,7 @@ git commit -m "feat: 2단계 판정 게이트 — 판정 줄·4번째 칸 규칙
 
 - 규칙(§4-3): 단계마다 네 필드 필수, 스키마는 json 블록 필수. `규칙화 불가` 항목은 `→ LLM 단계 N` 또는 `→ 사람 확인 지점 N` 으로 재배치돼야 통과. `→ 재판정: 이유` 가 있으면 `rejudge: true` 로 실패시킨다(CLI 가 2단계 되돌림을 안내)
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/phase3.test.mjs`:
 
@@ -789,12 +789,12 @@ test('phase3: 규칙화 불가 절이 없으면 경고, 단계가 없으면 실�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"phase3.test.mjs`
 Expected: FAIL — `Cannot find module '.../lib/phase3.mjs'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/lib/phase3.mjs`:
 
@@ -888,12 +888,12 @@ export function checkPhase3(a2wDir) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"phase3.test.mjs`
 Expected: PASS 6 tests
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/phase3.test.mjs .claude/skills/agent-to-webapp/scripts/lib/phase3.mjs
