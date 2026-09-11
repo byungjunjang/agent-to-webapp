@@ -2600,7 +2600,7 @@ CLAUDE.md 가 관찰 세션에 섞인다. 저장소 밖(세션 스크래치)에 
 - Consumes: Task 13 까지 전부. 프로젝트 스킬은 하위 폴더에서 열어도 로드된다(확인됨)
 - Produces: 학습자가 볼 완성 예시(`examples/rfq-quote-generator-app/docs/agent-to-webapp/`). 스킬 수정 커밋
 
-- [ ] **Step 1: 시작과 1단계 설치**
+- [x] **Step 1: 시작과 1단계 설치**
 
 터미널에서 `cd examples/rfq-quote-generator-app && claude` 로 새 세션을 열고 `/agent-to-webapp ../rfq-quote-generator` 를 친다.
 
@@ -2646,7 +2646,7 @@ Hi, please see the attached drawing and quote heat treatment per drawing.
 Material is steel (to be confirmed by our engineering). Let us know what you need from us.
 ```
 
-- [ ] **Step 2: 세 번 돌린다 (사람)**
+- [x] **Step 2: 세 번 돌린다 (사람)**
 
 `cd examples/rfq-quote-generator && claude` 를 세 번, 매번 새 세션. 각 세션에서 한 줄:
 
@@ -2659,26 +2659,26 @@ Material is steel (to be confirmed by our engineering). Let us know what you nee
 
 Expected: `examples/rfq-quote-generator-app/docs/agent-to-webapp/runs/` 에 `run-1.md`~`run-3.md` 와 `tools/*.jsonl` 3개
 
-- [ ] **Step 3: 1단계 게이트**
+- [x] **Step 3: 1단계 게이트**
 
 `cd examples/rfq-quote-generator-app && claude` → `/agent-to-webapp`.
 
 Expected: 재개 → `check_phase.mjs 1` 통과 → `tools/*.jsonl` 이 `run-N.tools.jsonl` 로 짝지어짐 → 2단계로 이어감
 
-- [ ] **Step 4: 2단계**
+- [x] **Step 4: 2단계**
 
 Expected: 서브에이전트가 `verdict.md` 를 쓴다 → 게이트 → 학습자 승인 질문 → `--approve` → 통과. 판정은
 `고정 가능` 또는 `조건부 고정 가능`(예외 입력의 에스컬레이션이 사람 확인으로 가면 조건부가 자연스럽다).
 `고정 불가` 가 나오면 배정표를 읽고 근거가 맞는지 본다. 근거가 약하면 프롬프트 2 를 고친다(Task 9 파일).
 
-- [ ] **Step 5: 3단계**
+- [x] **Step 5: 3단계**
 
 Expected: `workflow.md` 에 Step 0~7 이 `### 단계 N:` 으로, 실행 주체는 스펙 추출·회신 초안이 LLM, 루트 판정·원가
 계산이 코드(원본이 스크립트로 강제한다), 누락 스펙 에스컬레이션이 사람. 게이트 통과 → 승인.
 파이썬 스크립트(`evaluate_routes.py`, `calculate_quote.py`)의 규칙이 `- 규칙:` 에 옮겨 적혀야 4단계에서 TS 로 다시
 쓸 수 있다. 안 옮겨졌으면 프롬프트 3 에 "코드 단계의 규칙은 스크립트를 읽고 옮겨 적을 것" 을 더한다.
 
-- [ ] **Step 6: 4단계**
+- [x] **Step 6: 4단계**
 
 `ANTHROPIC_API_KEY` 가 환경에 있어야 한다. `node --version` 24 이상.
 
@@ -2687,7 +2687,7 @@ Expected: `verify/` 생성, `npm install`, 입력 3개 실행, `report.md`. PDF 
 파이썬 전용 의존이 남는 단계가 있으면 `## 외부 서비스로 뺄 단계` 에 나와야 한다. 이것이 스펙이 말하는
 "문제가 아니라 정보" 다.
 
-- [ ] **Step 7: 5단계와 성공 기준**
+- [x] **Step 7: 5단계와 성공 기준**
 
 Expected: `port-brief.md` 일곱 절, 게이트 통과, 대상 정리 안내, 프롬프트 5 안내.
 
@@ -2704,7 +2704,10 @@ test ! -d .git && echo NO_NESTED_GIT
 Expected: phase-1~5 모두 `passed`, 2·3 은 `approved`. `## 입력` 3개. `NO_NESTED_GIT`. 대상 폴더에
 `CLAUDE.local.md` 의 마커 블록이 남아 있으면 지운다.
 
-- [ ] **Step 8: 시행착오 기록**
+- [x] **Step 8: 시행착오 기록**
+
+**결과(2026-09-11).** 1~5단계 통과. 파일명은 LLM-Wiki 규칙(`YYYY-MM-DD_Slug.md`, 영문 슬러그)에 맞춰
+`raw/practice/2026-09-11_Agent-To-Webapp-Dogfood-RFQ.md` 로 썼다. 아래 틀보다 항목이 많다(결함 9개, 헤드리스 한계).
 
 `C:\Users\byung\LLM-Wiki\raw\practice\<오늘>_agent-to-webapp-dogfood-rfq.md` 에 적는다. 위키에 직접 쓰지 않는다.
 
@@ -2721,7 +2724,7 @@ Expected: phase-1~5 모두 `passed`, 2·3 은 `approved`. `## 입력` 3개. `NO_
 - 학습자에게 어려울 곳: <한 줄씩>
 ```
 
-- [ ] **Step 9: 커밋**
+- [x] **Step 9: 커밋**
 
 ```bash
 git add examples/rfq-quote-generator-app/docs .claude/skills/agent-to-webapp tests
@@ -2835,7 +2838,7 @@ git commit -m "feat: dogfood 고정 불가 경로 — competitor-review-crawler 
 - Consumes: Task 15·16 통과
 - Produces: 다른 폴더에서 `/agent-to-webapp` 가 불리는 상태. 위키 포인터
 
-- [ ] **Step 1: 복사 설치**
+- [x] **Step 1: 복사 설치**
 
 **실행 중 변경.** 설치는 `node .claude/skills/agent-to-webapp/scripts/install.mjs` 로 한다. 설치된 쪽의 `.env`(사용자
 API 키)를 지우지도 덮지도 않는다. 아래 `rm -rf` 와 `cp -r` 은 쓰지 않는다.
@@ -2848,7 +2851,7 @@ ls ~/.claude/skills/agent-to-webapp ~/.claude/skills/agent-to-webapp/scripts/lib
 
 Expected: SKILL.md, references/, scripts/(check_phase.mjs, log_tool_use.mjs, lib/), assets/
 
-- [ ] **Step 2: 유저 스코프 호출 확인 (사람)**
+- [x] **Step 2: 유저 스코프 호출 확인 (사람)**
 
 repo 밖의 아무 폴더(예: `C:\Users\byung\WorkOS\.lab\a2w-smoke-app`)를 만들어 `claude` 를 열고 `/agent-to-webapp` 만
 친다.
@@ -2856,7 +2859,7 @@ repo 밖의 아무 폴더(예: `C:\Users\byung\WorkOS\.lab\a2w-smoke-app`)를 �
 Expected: 스킬이 로드되고 "전환할 에이전트 폴더가 어디인가" 를 묻는다. 여기서 종료한다(대상을 주지 않는다).
 스킬 목록에 `agent-to-webapp` 가 두 번(프로젝트·유저) 보이는 것은 repo 안에서만이고 정상이다.
 
-- [ ] **Step 3: 위키 포인터**
+- [x] **Step 3: 위키 포인터**
 
 **실행 중 변경.** LLM-Wiki CLAUDE.md 가 위키 직접 편집을 금한다(`raw/practice/` 에 먼저 쓰고 `/wiki-ingest`).
 포인터 한 줄은 직접 달지 않고 Task 15 의 `raw/practice/` 노트에 요청으로 넣었다. `raw/` 는 저장 뒤 수정하지 않으므로
@@ -2870,13 +2873,13 @@ Expected: 스킬이 로드되고 "전환할 에이전트 폴더가 어디인가"
 
 Task 15·16 의 `raw/practice/` 두 파일은 `/wiki-ingest` 로 컴파일한다(LLM-Wiki 폴더에서).
 
-- [ ] **Step 4: 스펙 §14 정리**
+- [x] **Step 4: 스펙 §14 정리**
 
 `docs/superpowers/specs/2026-09-11-agent-to-webapp-design.md` §14 에서 dogfood 로 닫힌 항목(Codex 훅 페이로드는
 Codex 대상으로 돌리기 전엔 열려 있음, `additionalDirectories` 실측, create-next-app 허용 목록, 합성 입력)을
 확인된 사실로 바꾸거나 지운다. §15 검토 이력에 "dogfood 두 경로 통과 <날짜>" 를 더한다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add docs/superpowers/specs/2026-09-11-agent-to-webapp-design.md

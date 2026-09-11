@@ -1,7 +1,8 @@
 # 설계: agent-to-webapp 스킬 — 로컬 에이전트를 웹 앱으로 옮기는 고정 공정
 
 작성 2026-09-11 · 상태: 승인(brainstorming 1라운드 → grill-me 2라운드 반영, 2026-09-11) ·
-다음 단계: `superpowers:writing-plans` 로 구현 계획
+구현: 계획 `docs/superpowers/plans/2026-09-11-agent-to-webapp-skill.md`, 고정 가능 경로 dogfood 통과(2026-09-11) ·
+남은 일: 고정 불가 경로 dogfood(§14), `/wiki-ingest`
 
 이 문서는 LLM-Wiki 의 `wiki/vibe-coding/local-agent-to-web-app.md` 를 실행 절차로 옮기는
 기획서다. 위키는 개념과 프롬프트 원문을 보존하고, 이 문서와 스킬의 `references/` 는 그
@@ -533,3 +534,6 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   Node 로, 2단계를 서브에이전트로, Codex 대상 포함, Supabase 조건부, 프롬프트 실행판 정본화,
   데모 확정. §14 의 폴더명·examples·Agent SDK·스캐폴드·훅 언어 항목을 닫음
 - 2026-09-11 구현 중 사용자 결정: API 키는 스킬 `.env`(§2-18), 4단계는 API 스크립트로만(§2-19)
+- 2026-09-11 dogfood 고정 가능 경로(rfq-quote-generator) 1~5단계 통과. 스킬 결함 9개를 반영했다. 산출물은
+  `examples/rfq-quote-generator-app/`, 시행착오는 LLM-Wiki `raw/practice/2026-09-11_Agent-To-Webapp-Dogfood-RFQ.md`.
+  고정 불가 경로(competitor-review-crawler)는 URL 을 정하기 전이라 돌리지 않았다
