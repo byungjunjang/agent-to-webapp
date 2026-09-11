@@ -1,0 +1,17 @@
+[project]
+name = "review-crawler"
+version = "0.1.0"
+description = "경쟁사 리뷰 URL을 엑셀로 크롤링하는 에이전트 도구"
+requires-python = ">=3.10"
+dependencies = [
+    "scrapling>=0.2",
+    "openpyxl>=3.1",
+    "playwright>=1.42",
+    "lxml>=5.0",
+]
+
+[project.scripts]
+review-crawler = "run:main"
+
+[tool.setuptools]
+py-modules = ["run"]

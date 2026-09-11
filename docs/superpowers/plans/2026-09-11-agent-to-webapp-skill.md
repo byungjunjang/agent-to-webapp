@@ -2528,7 +2528,7 @@ git commit -m "feat: SKILL.md — 시작·단계 표·게이트 규칙·재개"
 - Produces: Task 15·16 이 도는 두 쌍의 폴더. 원본 `.demo-projects` 는 그대로 둔다(§10 사본 규칙)
 - 조사된 사실(2026-09-11): 두 원본 모두 `.git` 없음. rfq 는 1.7MB, 스킬 4개(`quote-calculator`, `reply-email-writer`, `rfq-spec-extractor`, `route-evaluator`), 샘플 입력 `input/NovaDrive/{customer_rfq_email.pdf, part_drawing_EV_input_shaft.pdf}`, 루트에도 같은 PDF 둘. 크롤러는 11MB 중 대부분이 `output/`
 
-- [ ] **Step 1: `.gitignore` 작성**
+- [x] **Step 1: `.gitignore` 작성**
 
 ```
 node_modules/
@@ -2543,7 +2543,7 @@ examples/*/.venv/
 examples/*/__pycache__/
 ```
 
-- [ ] **Step 2: 원본 복사 (output 제외)**
+- [x] **Step 2: 원본 복사 (output 제외)**
 
 Run (Git Bash, repo 루트):
 
@@ -2560,7 +2560,7 @@ du -sh examples/*
 
 Expected: 스킬 폴더 4개 + 1개가 보이고 `NO_NESTED_GIT`. 크롤러 사본이 1MB 안쪽(11MB 는 output 이었다). Git Bash 에는 rsync 가 없으므로 cp 를 쓴다
 
-- [ ] **Step 3: 작업 폴더 둘을 init**
+- [x] **Step 3: 작업 폴더 둘을 init**
 
 ```bash
 mkdir -p examples/rfq-quote-generator-app examples/competitor-review-crawler-app
@@ -2571,7 +2571,7 @@ cat examples/rfq-quote-generator-app/docs/agent-to-webapp/STATUS.md
 
 Expected: 두 STATUS 에 `target: ../…`, `runtime: claude-code`. `examples/*-app/` 에 `.git` 을 만들지 않는다 — 모노레포 안이라 SKILL.md 의 `git rev-parse` 규칙이 건너뛴다
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add .gitignore examples/

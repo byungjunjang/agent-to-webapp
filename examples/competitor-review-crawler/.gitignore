@@ -1,0 +1,23 @@
+# Session cookies / auth artifacts — never commit
+output/**/_session.json
+output/**/*.cookies
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temp / backup files
+*.bak
+*.tmp
