@@ -443,6 +443,11 @@ Root Directory 하나를 보고, 클라우드 에이전트는 저장소를 통�
 안의 `<이름>-app/` 은 `docs/` 만 두고 `.git` 을 만들지 않는다(중첩 저장소 금지). dogfood
 산출물은 커밋해서 학습자가 보는 완성 예시로 쓴다.
 
+dogfood 는 `examples/` 안에서 돌리지 않는다(2026-09-11 구현 중 발견). 그 안에서는 이 저장소 CLAUDE.md("기획서를
+먼저 읽어라")와 WorkOS CLAUDE.md 가 관찰 세션에 함께 로드돼 에이전트 행동이 바뀐다. 저장소 밖(세션 스크래치 등)에
+대상 사본과 `-app` 폴더를 만들어 돌리고, 끝나면 `-app/docs/agent-to-webapp/` 만 `examples/` 로 옮긴다. 스킬은
+유저 스코프 설치본을 쓴다. 학습자 PC 에서도 같은 문제가 생길 수 있어 1단계가 상위 폴더 CLAUDE.md 를 경고한다.
+
 실습 시행착오는 `LLM-Wiki/raw/practice/YYYY-MM-DD_주제.md` 로 먼저 쓰고 `/wiki-ingest` 로
 컴파일한다. 위키에 직접 쓰지 않는다.
 

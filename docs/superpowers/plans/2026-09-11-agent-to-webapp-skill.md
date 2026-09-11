@@ -2585,6 +2585,12 @@ git commit -m "chore: 예제 두 쌍 — rfq-quote-generator(고정 가능), com
 사람이 끼는 태스크다. 서브에이전트가 아니라 **이 repo 를 연 사람과 세션이 함께** 한다. 스펙 §10 의 첫 행이
 성공 기준이다. 발견한 문제는 스킬을 고쳐서 해결하고(Task 1~13 의 파일), 시행착오는 Step 8 에 적는다.
 
+**위치(실행 중 변경).** `examples/` 는 이 저장소 안이라 거기서 에이전트를 돌리면 저장소 CLAUDE.md 와 WorkOS
+CLAUDE.md 가 관찰 세션에 섞인다. 저장소 밖(세션 스크래치)에 `.demo-projects` 사본과 `-app` 폴더를 새로 만들어
+돌리고, 스킬은 유저 스코프 설치본(Task 17 Step 1 을 앞당김)을 쓴다. 관찰 세션은 `--setting-sources project,local`
+로 사용자 전역 플러그인을 뺀다. 끝나면 `-app/docs/agent-to-webapp/` 만 `examples/<이름>-app/` 로 옮긴다. 아래
+명령의 `examples/…` 는 그 바깥 폴더로 읽는다. Task 16 도 같다.
+
 **Files:**
 - Modify: `examples/rfq-quote-generator-app/docs/agent-to-webapp/**` (스킬이 만든다)
 - Modify: `examples/rfq-quote-generator/CLAUDE.local.md`, `examples/rfq-quote-generator/.claude/settings.local.json` (스킬이 만들고 5단계 뒤 지운다. gitignore 됨)
