@@ -2167,7 +2167,7 @@ git commit -m "docs: 단계별 절차 문서 phase-1~5"
 - Consumes: `BRIEF_HEADINGS` (Task 6). 틀의 일곱 헤딩은 이 배열과 글자 하나까지 같다
 - Produces: 5단계가 복사해서 채우는 틀. 배포 뒤 학습자가 따르는 체크리스트
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/references.test.mjs`:
 
@@ -2198,12 +2198,12 @@ test('deploy-checklist.md 가 있고 체크박스가 5개 이상', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"references.test.mjs`
 Expected: FAIL — `ENOENT … port-brief-template.md`
 
-- [ ] **Step 3: `port-brief-template.md` 작성**
+- [x] **Step 3: `port-brief-template.md` 작성**
 
 ```markdown
 # 웹 앱 전환 브리프: <이름>
@@ -2244,7 +2244,7 @@ Vercel 함수는 실행 시간 제한이 있다. report.md 의 단계별 시간�
 <비워 두면 다음 세션이 기본 스타일로 만든다. 예: 라이트 모드 전용, 악센트 #2563EB, gradient·shadow 금지>
 ```
 
-- [ ] **Step 4: `deploy-checklist.md` 작성**
+- [x] **Step 4: `deploy-checklist.md` 작성**
 
 ```markdown
 # 배포 확인 체크리스트
@@ -2262,12 +2262,12 @@ Vercel 함수는 실행 시간 제한이 있다. report.md 의 단계별 시간�
 - [ ] 대상 프로젝트의 로컬 전용 파일(`CLAUDE.local.md` 블록, `settings.local.json` 훅·additionalDirectories)을 지웠다
 ```
 
-- [ ] **Step 5: 통과 확인**
+- [x] **Step 5: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"references.test.mjs`
 Expected: PASS 2 tests
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add tests/references.test.mjs .claude/skills/agent-to-webapp/references/port-brief-template.md .claude/skills/agent-to-webapp/references/deploy-checklist.md
