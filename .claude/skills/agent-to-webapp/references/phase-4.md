@@ -5,7 +5,8 @@
 ## 1. 전제 확인
 
 - `node --version` 이 24 이상. 아니면 멈추고 알린다(`.ts` 직접 실행이 안 된다)
-- `ANTHROPIC_API_KEY` 가 환경에 있다. 없으면 멈추고 알린다. 키를 파일에 쓰지 않는다
+- `ANTHROPIC_API_KEY` 가 환경에 있거나 `$A2W/verify/.env` 에 `ANTHROPIC_API_KEY=…` 한 줄로 있다. 둘 다 없으면
+  멈추고, 학습자에게 그 파일을 직접 만들라고 안내한다. 스킬이 키를 받아 적지 않는다. `.env` 는 verify/.gitignore 가 가린다
 - 모델은 `A2W_MODEL`, 기본 `claude-sonnet-5`. 로컬 에이전트가 다른 모델이었으면 차이의 원인이 모델일 수
   있으니 report 에 남긴다
 
@@ -16,13 +17,13 @@
 ```
 $A2W/verify/
   package.json      {"name":"verify","private":true,"type":"module","dependencies":{"@anthropic-ai/sdk":"latest"}} + 단계에 꼭 필요한 순수 JS 패키지
-  .gitignore        node_modules
+  .gitignore        node_modules 와 .env 두 줄
   run.ts            입력 경로를 받아 steps 를 workflow.md 순서로 부르고 결과를 출력
   steps/<n>-<이름>.ts   단계당 export 함수 하나. 입출력 타입은 workflow.md 의 JSON 스키마
   report.md         실행 후 작성
 ```
 
-`cd $A2W/verify && npm install` 뒤 `node run.ts <입력 폴더>` 로 입력 3개를 차례로 돌린다. 웹 앱 뼈대(Next.js,
+`cd $A2W/verify && npm install` 뒤 `node --env-file-if-exists=.env run.ts <입력 폴더>` 로 입력 3개를 차례로 돌린다. 웹 앱 뼈대(Next.js,
 app/, pages/)를 만들지 않는다. `child_process` 로 Python 을 부르지 않는다. TS 로 안 되는 단계는 report 의
 `## 외부 서비스로 뺄 단계` 에 적고 그 단계는 입력을 그대로 통과시키는 stub 으로 둔다.
 

@@ -83,7 +83,8 @@
 ```
 <A2W>/workflow.md 의 순서대로 각 단계를 함수 하나로 구현한 TypeScript 스크립트를 <A2W>/verify/ 에 작성해줘.
 - Node 24 에서 `node run.ts` 로 바로 실행되는 단독 스크립트로. tsx 나 빌드 단계 없이. 웹 앱 뼈대는 만들지 말 것
-- 구성: package.json, .gitignore(node_modules), run.ts, steps/<단계>.ts (단계당 함수 하나)
+- 구성: package.json, .gitignore(node_modules 와 .env), run.ts, steps/<단계>.ts (단계당 함수 하나)
+- 실행은 `node --env-file-if-exists=.env run.ts <입력 폴더>`. API 키는 환경변수나 verify/.env 에서 읽고 코드에 쓰지 말 것
 - 의존은 @anthropic-ai/sdk 와 그 단계에 꼭 필요한 순수 JS 패키지만(예: xlsx 생성). Vercel 서버리스에서 안 도는 것(네이티브 바이너리, 브라우저 자동화, Python)은 금지
 - LLM 단계는 Anthropic SDK 로 호출. 모델은 환경변수 A2W_MODEL, 없으면 claude-sonnet-5
 - 단계 사이에 넘기는 데이터는 workflow.md 의 JSON 스키마를 그대로 쓸 것

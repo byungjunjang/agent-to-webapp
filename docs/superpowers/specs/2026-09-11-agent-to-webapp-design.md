@@ -153,7 +153,7 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
   `외부 서비스로 뺄 단계` 로 표시한다. `child_process` 로 Python 을 부르는 것은 금지 —
   Vercel 에서 안 도니 검증이 안 된다
 - 산출물: `verify/` — 단계당 함수 하나(`steps/`), `run.ts`, `package.json`, `.gitignore`
-  (node_modules), `report.md`(입력 3개의 결과와 로컬 에이전트 결과의 차이, 사용한 모델명,
+  (node_modules, .env), `report.md`(입력 3개의 결과와 로컬 에이전트 결과의 차이, 사용한 모델명,
   외부 서비스로 뺄 단계 목록)
 - 게이트: `report.md` 에 3건 결과, 모델명, 외부 서비스 절(비어 있어도 절은 있어야 한다).
   차이가 허용 범위인지는 사람이 판단한다

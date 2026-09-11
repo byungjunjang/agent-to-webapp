@@ -8,6 +8,12 @@ export const REPORT_MODEL = '## 모델';
 export const REPORT_INPUT = '## 입력 ';
 export const REPORT_HUMAN = '## 사람이 봤어야 할 것';
 export const REPORT_EXTERNAL = '## 외부 서비스로 뺄 단계';
+// .env 는 API 키를 담으므로 반드시 가린다. '/x', 'x/' 표기도 같은 줄로 본다.
+export const GITIGNORE_MUST = ['node_modules', '.env'];
+
+function gitignoreEntries(text) {
+  return text.split(/\r?\n/).map(l => l.trim().replace(/^\//, '').replace(/\/$/, '')).filter(Boolean);
+}
 
 export function checkPhase4(a2wDir) {
   const errors = [];
@@ -16,6 +22,13 @@ export function checkPhase4(a2wDir) {
   if (!existsSync(vdir)) return { ok: false, errors: ['verify/ 폴더가 없다'], warnings, stepCount: 0 };
 
   for (const f of REQUIRED_FILES) if (!existsSync(join(vdir, f))) errors.push(`verify/${f} 없음`);
+  const gi = join(vdir, '.gitignore');
+  if (existsSync(gi)) {
+    const entries = gitignoreEntries(readFileSync(gi, 'utf8'));
+    for (const m of GITIGNORE_MUST) {
+      if (!entries.includes(m)) errors.push(`verify/.gitignore 에 '${m}' 줄이 없다 (.env 는 API 키가 커밋되지 않게 가린다)`);
+    }
+  }
   const stepsDir = join(vdir, 'steps');
   const stepFiles = existsSync(stepsDir) ? readdirSync(stepsDir).filter(f => f.endsWith('.ts')) : [];
   if (stepFiles.length === 0) errors.push('verify/steps/ 에 .ts 파일이 없다 (단계당 함수 하나)');
