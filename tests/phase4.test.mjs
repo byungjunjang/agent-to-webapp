@@ -72,6 +72,15 @@ test('phase4: .gitignore 의 /.env, .env/ 표기도 인정한다', () => {
   assert.deepEqual(checkPhase4(d).errors, []);
 });
 
+test('phase4: 재검증 중 고친 것이 있으면 workflow.md 반영을 경고한다', () => {
+  const fixed = REPORT + '## 재검증 중 고친 것\n- 단계 5 도구 스키마를 항목별 판정으로 바꿨다\n';
+  const r = checkPhase4(verifyApp(fixed));
+  assert.equal(r.ok, true);
+  assert.ok(r.warnings.some(w => w.includes('workflow.md')));
+  const none = REPORT + '## 재검증 중 고친 것\n- 없음\n';
+  assert.ok(!checkPhase4(verifyApp(none)).warnings.some(w => w.includes('workflow.md')));
+});
+
 test('phase4: verify 폴더 없으면 실패', () => {
   assert.equal(checkPhase4(join(makeApp(), A2W)).ok, false);
 });

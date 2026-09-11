@@ -8,6 +8,8 @@ export const REPORT_MODEL = '## 모델';
 export const REPORT_INPUT = '## 입력 ';
 export const REPORT_HUMAN = '## 사람이 봤어야 할 것';
 export const REPORT_EXTERNAL = '## 외부 서비스로 뺄 단계';
+// 재검증 중 단계 코드를 고쳤으면 여기 적는다. 비어 있지 않으면 workflow.md 반영을 경고한다.
+export const REPORT_FIXES = '## 재검증 중 고친 것';
 // .env 는 API 키를 담으므로 반드시 가린다. '/x', 'x/' 표기도 같은 줄로 본다.
 export const GITIGNORE_MUST = ['node_modules', '.env'];
 
@@ -42,6 +44,10 @@ export function checkPhase4(a2wDir) {
     }
     if (sectionBody(text, REPORT_EXTERNAL) === null) errors.push(`report.md: '${REPORT_EXTERNAL}' 절이 없다 (없으면 '- 없음')`);
     if (!hasHeading(text, REPORT_HUMAN)) warnings.push(`report.md: '${REPORT_HUMAN}' 절이 없다. 사람 확인 지점이 있었다면 적어라`);
+    const fixes = sectionBody(text, REPORT_FIXES);
+    if (fixes !== null && !isBlank(fixes) && fixes.trim() !== '- 없음') {
+      warnings.push(`report.md: '${REPORT_FIXES}' 가 비어 있지 않다. 고친 내용을 workflow.md 의 그 단계에도 반영했는지 확인하라. 5단계는 둘을 함께 넘긴다`);
+    }
   }
   return { ok: errors.length === 0, errors, warnings, stepCount: stepFiles.length };
 }
