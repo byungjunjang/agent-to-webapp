@@ -2388,7 +2388,7 @@ git commit -m "feat: 훅 등록 예시 — Claude Code settings.local.json, Code
 - Produces: Claude Code 가 로드하는 절차. 150줄 안쪽. `$ARGUMENTS` 로 대상 경로와 `--batch` 를 받는다
 - 스킬이 로드될 때 Claude Code 는 "Base directory for this skill: <경로>" 를 알려준다. 본문은 그 값을 `$SKILL_DIR` 로 부른다
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/skill_md.test.mjs`:
 
@@ -2423,12 +2423,12 @@ test('SKILL.md: 참조하는 references/ 문서와 scripts 가 실제로 있다'
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"skill_md.test.mjs`
 Expected: FAIL — `ENOENT … SKILL.md`
 
-- [ ] **Step 3: `SKILL.md` 작성**
+- [x] **Step 3: `SKILL.md` 작성**
 
 ```markdown
 ---
@@ -2503,12 +2503,12 @@ STATUS 에 `terminated` 가 있으면 종료된 과제라고 알리고 멈춘다
 바이브 코딩은 다음 세션의 일이다.
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"skill_md.test.mjs` 그리고 `node --test "tests/*.test.mjs"`
 Expected: PASS. 전체 53 tests (Task 1~8: 46, Task 11: 2, Task 12: 3, Task 13: 2)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/skill_md.test.mjs .claude/skills/agent-to-webapp/SKILL.md
