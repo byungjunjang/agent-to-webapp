@@ -98,7 +98,7 @@ terminated: 고정 불가 2026-09-13        (종료 때만 있는 줄)
 - 2026-09-13 phase-2 override: 사유
 ```
 
-- [ ] **Step 1: 테스트 헬퍼 작성**
+- [x] **Step 1: 테스트 헬퍼 작성**
 
 `tests/helpers.mjs`:
 
@@ -123,7 +123,7 @@ export function write(appDir, rel, text) {
 export const A2W = 'docs/agent-to-webapp';
 ```
 
-- [ ] **Step 2: 실패하는 테스트 작성**
+- [x] **Step 2: 실패하는 테스트 작성**
 
 `tests/status.test.mjs`:
 
@@ -178,12 +178,12 @@ test('readStatus/writeStatus: 파일 위치와 없을 때 null', () => {
 });
 ```
 
-- [ ] **Step 3: 실패 확인**
+- [x] **Step 3: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"status.test.mjs`
 Expected: FAIL — `Cannot find module '.../scripts/lib/status.mjs'`
 
-- [ ] **Step 4: 구현**
+- [x] **Step 4: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/lib/status.mjs`:
 
@@ -257,12 +257,12 @@ export function writeStatus(appDir, st) {
 }
 ```
 
-- [ ] **Step 5: 통과 확인**
+- [x] **Step 5: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"status.test.mjs`
 Expected: PASS 4 tests
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add tests/helpers.mjs tests/status.test.mjs .claude/skills/agent-to-webapp/scripts/lib/status.mjs
@@ -291,7 +291,7 @@ git commit -m "feat: STATUS.md 읽기·쓰기 모듈 — 게이트 스크립트�
   - `pairToolLogs(runsDir: string, runFiles: string[]): string[]` — `runs/tools/<session>.jsonl` 을 첫 줄 `ts` 순서로 `runs/run-N.tools.jsonl` 로 옮긴다. 경고 배열 반환
 - 1단계 게이트 규칙(§4-1): `runs/run-N.md` 3개 이상, 각 파일에 `RUN_HEADINGS` 셋 다 존재, `runs/inputs/` 에 README.md 와 그 외 항목 3개 이상
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/phase1.test.mjs`:
 
@@ -366,12 +366,12 @@ test('phase1: runs/tools/*.jsonl 을 ts 순서로 run-N.tools.jsonl 에 짝짓�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"phase1.test.mjs`
 Expected: FAIL — `Cannot find module '.../lib/md.mjs'`
 
-- [ ] **Step 3: `md.mjs` 구현**
+- [x] **Step 3: `md.mjs` 구현**
 
 ```js
 // 마크다운 산출물을 검사할 때 공통으로 쓰는 헬퍼. 파서가 아니라 줄 단위 검사다.
@@ -402,7 +402,7 @@ export function sectionBody(text, heading) {
 }
 ```
 
-- [ ] **Step 4: `phase1.mjs` 구현**
+- [x] **Step 4: `phase1.mjs` 구현**
 
 ```js
 // 1단계 관찰 게이트: run 3개 + 헤딩, 입력 3개 + README, 훅 기록 짝짓기.
@@ -474,12 +474,12 @@ export function pairToolLogs(runsDir, runFiles) {
 }
 ```
 
-- [ ] **Step 5: 통과 확인**
+- [x] **Step 5: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"phase1.test.mjs`
 Expected: PASS 5 tests
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add tests/phase1.test.mjs .claude/skills/agent-to-webapp/scripts/lib/md.mjs .claude/skills/agent-to-webapp/scripts/lib/phase1.mjs
