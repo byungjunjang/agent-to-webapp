@@ -1695,7 +1695,7 @@ git commit -m "feat: PostToolUse 훅 — 세션별 jsonl 기록, 낯선 페이�
 - Produces: 다섯 프롬프트의 실행판(§2-17 정본). `phase-N.md`(Task 10)와 `SKILL.md`(Task 13)가 "프롬프트 N 을 쓴다" 로 가리킨다
 - 검증은 사람 눈: 각 프롬프트를 스펙 §7 과 대조하고, 형식 줄이 스크립트 상수와 같은지 `grep` 으로 확인한다
 
-- [ ] **Step 1: `prompts.md` 작성**
+- [x] **Step 1: `prompts.md` 작성**
 
 ````markdown
 # 프롬프트 실행판
@@ -1819,7 +1819,7 @@ docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽�
 스타일 지정은 여기 두지 않는다. `port-brief-template.md` 의 선택 절에서 브리프에 넣는다.
 ````
 
-- [ ] **Step 2: `decision-axes.md` 작성**
+- [x] **Step 2: `decision-axes.md` 작성**
 
 스펙 §8 의 표 넷을 그대로 옮긴다. 출처 줄을 맨 위에 둔다.
 
@@ -1886,7 +1886,7 @@ Skill 하나가 웹 앱에서는 코드가 호출하는 서버 함수 하나와,
 | 상태 | 폴더 | Supabase |
 ```
 
-- [ ] **Step 3: 형식 문자열 대조**
+- [x] **Step 3: 형식 문자열 대조**
 
 Run (repo 루트, Git Bash):
 
@@ -1899,7 +1899,7 @@ done
 
 Expected: 15줄 모두 `OK`
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add .claude/skills/agent-to-webapp/references/prompts.md .claude/skills/agent-to-webapp/references/decision-axes.md
