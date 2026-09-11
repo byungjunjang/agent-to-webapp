@@ -1,0 +1,70 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "routes.count",
+      "level": "error",
+      "ok": true,
+      "detail": "3개"
+    },
+    {
+      "name": "routes.status",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "routes.explained",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "calc.numbers",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "xlsx.total",
+      "level": "error",
+      "ok": true,
+      "detail": "합계금액 줄 \"합계금액:  ¥ 33,450.00 CNY  (부가세 별도)\" 에 33,450.00 포함 여부"
+    },
+    {
+      "name": "xlsx.items",
+      "level": "error",
+      "ok": true,
+      "detail": "2행 일치"
+    },
+    {
+      "name": "email.ko.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.zh.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.en.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.numbers_consistent",
+      "level": "warning",
+      "ok": true,
+      "detail": null
+    }
+  ],
+  "email_missing": {
+    "ko": [],
+    "zh": [],
+    "en": []
+  }
+}

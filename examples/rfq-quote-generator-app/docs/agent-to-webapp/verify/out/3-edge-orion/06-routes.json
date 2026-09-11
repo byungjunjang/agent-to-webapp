@@ -1,0 +1,74 @@
+[
+  {
+    "route_name": "vacuum_carburizing",
+    "equipment_id": "VCQ-1200",
+    "display_name": "Vacuum carburizing + 10 bar gas quench",
+    "distortion_risk": "Low",
+    "status": "recommended",
+    "rule_hits": [
+      "2A.valid",
+      "2A.rec:tight",
+      "2A.rec:no_grind",
+      "2A.rec:automotive"
+    ],
+    "material_valid": true,
+    "equipment_range_match": true,
+    "lead_time_assessment": "feasible",
+    "lead_time_days": "10-12",
+    "conditional_on": [
+      "material",
+      "delivery_days"
+    ],
+    "reason": null,
+    "recommendation_comment": null,
+    "technical_reason": null,
+    "commercial_tradeoff": null,
+    "assumptions_to_confirm": [],
+    "lead_time_note": null
+  },
+  {
+    "route_name": "gas_carburizing",
+    "equipment_id": "GC-900",
+    "display_name": "Gas carburizing + oil quench",
+    "distortion_risk": "Medium",
+    "status": "candidate_not_recommended",
+    "rule_hits": [
+      "2B.candidate:tight+no_grind"
+    ],
+    "material_valid": true,
+    "equipment_range_match": true,
+    "lead_time_assessment": "feasible",
+    "lead_time_days": "8-10",
+    "conditional_on": [
+      "material",
+      "delivery_days"
+    ],
+    "reason": null,
+    "recommendation_comment": null,
+    "technical_reason": null,
+    "commercial_tradeoff": null,
+    "assumptions_to_confirm": [],
+    "lead_time_note": null
+  },
+  {
+    "route_name": "gas_nitriding",
+    "equipment_id": "GN-600",
+    "display_name": "Gas nitriding",
+    "distortion_risk": "Low",
+    "status": "not_suitable",
+    "rule_hits": [
+      "2C.not_suitable:ecd"
+    ],
+    "material_valid": true,
+    "equipment_range_match": false,
+    "lead_time_assessment": null,
+    "lead_time_days": null,
+    "conditional_on": [],
+    "reason": null,
+    "recommendation_comment": null,
+    "technical_reason": null,
+    "commercial_tradeoff": null,
+    "assumptions_to_confirm": [],
+    "lead_time_note": null
+  }
+]

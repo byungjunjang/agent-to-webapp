@@ -1,0 +1,75 @@
+[
+  {
+    "route_name": "vacuum_carburizing",
+    "equipment_id": "VCQ-1200",
+    "display_name": "Vacuum carburizing + 10 bar gas quench",
+    "distortion_risk": "Low",
+    "status": "recommended",
+    "rule_hits": [
+      "2A.valid",
+      "2A.rec:tight",
+      "2A.rec:no_grind",
+      "2A.rec:automotive"
+    ],
+    "material_valid": true,
+    "equipment_range_match": true,
+    "lead_time_assessment": "feasible",
+    "lead_time_days": "10-12",
+    "conditional_on": [],
+    "reason": "재질 SCM420H는 2A 유효 재질 목록에 해당하고, 유효경화층 요구(0.45~0.65mm)와 표면경도(HRC 58-62)가 2A 상한 및 경도 범위 내에 있어 2A.valid 조건을 충족한다. 또한 런아웃 허용치 0.03mm 이하, 연삭 수정 불가(grinding_after_ht=false), 자동차 품질 우선(automotive_quality_priority=true) 요구가 각각 2A.rec:tight, 2A.rec:no_grind, 2A.rec:automotive 권장 조건에 부합해 진공침탄이 추천된다.",
+    "recommendation_comment": "정밀 진직도와 무연삭 요구, 자동차 품질 우선 조건을 모두 만족하는 최적 루트로 추천.",
+    "technical_reason": "진공침탄+10bar 가스켄칭은 낮은 왜곡률(Low distortion risk)을 가지는 공정으로, 연삭 수정이 불가능하고 런아웃 0.03mm 이하를 요구하는 정밀부품에 적합하며 자동차 부품 품질 기준을 만족시킨다.",
+    "commercial_tradeoff": "동일 로트(1200개) 기준 단가 13.92위안/개, 총액 16,704위안으로 가스침탄(단가 8.76위안, 총액 10,512위안) 대비 약 59% 높은 비용이나, 가스침탄은 런아웃/연삭 조건상 candidate_not_recommended이며 Medium distortion risk를 가져 정밀 요구를 충족하지 못한다.",
+    "assumptions_to_confirm": [
+      "마스킹 / 나사부 비열처리 구간",
+      "검사 샘플링 기준",
+      "경도 측정 위치 및 방법",
+      "열처리 후 교정 허용 여부",
+      "포장 / 방청 조건",
+      "PPAP / FAI / 시작품 승인 요구"
+    ],
+    "lead_time_note": "표준 리드타임 10-12일이며 요청 납기 12일(PO 후) 내 feasible로 평가됨; 납기 12일은 sources.delivery_days=rfq 값으로 영업 가정값이 아님."
+  },
+  {
+    "route_name": "gas_carburizing",
+    "equipment_id": "GC-900",
+    "display_name": "Gas carburizing + oil quench",
+    "distortion_risk": "Medium",
+    "status": "candidate_not_recommended",
+    "rule_hits": [
+      "2B.candidate:tight+no_grind"
+    ],
+    "material_valid": true,
+    "equipment_range_match": true,
+    "lead_time_assessment": "feasible",
+    "lead_time_days": "8-10",
+    "conditional_on": [],
+    "reason": "재질 및 유효경화층 요구가 2B.valid 범위(ECD 상한 0.40-1.20)에 들어 재질/장비 매칭은 가능하나, 런아웃 0.03mm 이하 및 연삭 수정 불가 조건이 겹쳐 2B.candidate:tight+no_grind에 해당해 candidate로만 분류되고 권장되지는 않는다. Medium distortion risk로 인해 진공침탄 대비 정밀도 리스크가 있다.",
+    "recommendation_comment": "비용은 낮으나 정밀 왜곡 관리 요구에는 리스크가 있어 대안 루트로만 제시.",
+    "technical_reason": null,
+    "commercial_tradeoff": null,
+    "assumptions_to_confirm": [],
+    "lead_time_note": "표준 리드타임 8-10일로 요청 납기 12일 내 feasible; 납기 값은 rfq 출처로 영업 가정값 아님."
+  },
+  {
+    "route_name": "gas_nitriding",
+    "equipment_id": "GN-600",
+    "display_name": "Gas nitriding",
+    "distortion_risk": "Low",
+    "status": "not_suitable",
+    "rule_hits": [
+      "2C.not_suitable:ecd"
+    ],
+    "material_valid": true,
+    "equipment_range_match": false,
+    "lead_time_assessment": null,
+    "lead_time_days": null,
+    "conditional_on": [],
+    "reason": "2C 규정상 ECD 상한이 0.40mm를 초과하면 not_suitable로 판정되는데, 본 건은 유효경화층 요구가 0.45~0.65mm로 상한을 초과하여 2C.not_suitable:ecd 조건에 해당한다. 이에 따라 equipment_range_match도 false로 표시되어 해당 장비로는 스펙을 만족할 수 없다.",
+    "recommendation_comment": "유효경화층 요구가 질화 공정 한계를 초과해 부적합.",
+    "technical_reason": null,
+    "commercial_tradeoff": null,
+    "assumptions_to_confirm": [],
+    "lead_time_note": "lead_time_assessment가 null인 이유는 공정 자체가 not_suitable로 판정되어 리드타임 평가 대상이 아니기 때문임."
+  }
+]

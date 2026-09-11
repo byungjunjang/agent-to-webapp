@@ -1,0 +1,254 @@
+{
+  "input": "1-easy-novadrive",
+  "status": "done",
+  "attention": null,
+  "model": "claude-sonnet-5",
+  "job_id": "eb3c4b2b-ed34-4da4-9307-66606200dd74",
+  "received_date": "2026-09-11",
+  "mode": "firm",
+  "provisional_fields": [],
+  "rfq_number": "ND-RFQ-2604-017",
+  "lot_size": 1200,
+  "delivery_days": 12,
+  "material": "SCM420H",
+  "outcome": "quote",
+  "headline_route": "vacuum_carburizing",
+  "quotes": [
+    {
+      "route_name": "vacuum_carburizing",
+      "status": "recommended",
+      "cycle_time_hr": 5.5,
+      "batches": 6,
+      "unit_cost_cny": 11.45,
+      "quote_per_pc_cny": 13.92,
+      "total_quote_cny": 16704
+    },
+    {
+      "route_name": "gas_carburizing",
+      "status": "candidate_not_recommended",
+      "cycle_time_hr": 6.6,
+      "batches": 4,
+      "unit_cost_cny": 7.07,
+      "quote_per_pc_cny": 8.76,
+      "total_quote_cny": 10512
+    }
+  ],
+  "references": {
+    "not_suitable_routes": [
+      {
+        "route_name": "gas_nitriding",
+        "cycle_time_hr": 19.9,
+        "batches": 5,
+        "quote_per_pc_cny": 23.41
+      }
+    ],
+    "monthly_volume": [
+      {
+        "route_name": "vacuum_carburizing",
+        "lot_size": 3600,
+        "batches": 17,
+        "quote_per_pc_cny": 13.17
+      },
+      {
+        "route_name": "gas_carburizing",
+        "lot_size": 3600,
+        "batches": 10,
+        "quote_per_pc_cny": 7.36
+      }
+    ],
+    "lot_table": []
+  },
+  "routes": [
+    {
+      "route_name": "vacuum_carburizing",
+      "status": "recommended",
+      "rule_hits": [
+        "2A.valid",
+        "2A.rec:tight",
+        "2A.rec:no_grind",
+        "2A.rec:automotive"
+      ],
+      "lead_time_assessment": "feasible",
+      "conditional_on": []
+    },
+    {
+      "route_name": "gas_carburizing",
+      "status": "candidate_not_recommended",
+      "rule_hits": [
+        "2B.candidate:tight+no_grind"
+      ],
+      "lead_time_assessment": "feasible",
+      "conditional_on": []
+    },
+    {
+      "route_name": "gas_nitriding",
+      "status": "not_suitable",
+      "rule_hits": [
+        "2C.not_suitable:ecd"
+      ],
+      "lead_time_assessment": null,
+      "conditional_on": []
+    }
+  ],
+  "missing_specs": [
+    "1. [checklist] masking: 마스킹 / 비열처리 구간",
+    "2. [checklist] sampling_plan: 검사 샘플링 기준",
+    "3. [checklist] straightening: 열처리 후 교정 허용 여부",
+    "4. [checklist] packing: 포장 / 방청 조건",
+    "5. [checklist] ppap_fai: PPAP / FAI / 시작품 승인 요구"
+  ],
+  "checklist_defined": [
+    "hardness_test"
+  ],
+  "xlsx": "견적서_ND-RFQ-2604-017.xlsx",
+  "checks": [
+    {
+      "name": "routes.count",
+      "level": "error",
+      "ok": true,
+      "detail": "3개"
+    },
+    {
+      "name": "routes.status",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "routes.explained",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "calc.numbers",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "xlsx.total",
+      "level": "error",
+      "ok": true,
+      "detail": "합계금액 줄 \"합계금액:  ¥ 16,704.00 CNY  (부가세 별도)\" 에 16,704.00 포함 여부"
+    },
+    {
+      "name": "xlsx.items",
+      "level": "error",
+      "ok": true,
+      "detail": "2행 일치"
+    },
+    {
+      "name": "email.ko.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.zh.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.en.required",
+      "level": "error",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "email.numbers_consistent",
+      "level": "warning",
+      "ok": true,
+      "detail": null
+    }
+  ],
+  "human_notes": [
+    "단계 4 견적 전제 확인: mode firm 이라 skipped. 사람이 볼 것 없음",
+    "단계 12 발송 전 검토: 자동 승인. 사람이 봤어야 할 것 — headline 루트와 단가가 맞는지, 대안·참고 루트 설명이 사실과 맞는지 / 누락 스펙의 가정 문구가 이 도면에 맞는지(나사부 방탄, 측정 구간처럼 도면마다 다른 내용) / provisional 이면 가정값이 JSON·견적서·이메일 세 곳에 가정으로 표시됐는지 / 세 언어 이메일의 호칭과 톤, 고객이 요청한 회신 항목에 답했는지"
+  ],
+  "timings": [
+    {
+      "step": "1",
+      "ms": 23
+    },
+    {
+      "step": "2#1",
+      "ms": 19845
+    },
+    {
+      "step": "3#1",
+      "ms": 0
+    },
+    {
+      "step": "4",
+      "ms": 1
+    },
+    {
+      "step": "5",
+      "ms": 30228
+    },
+    {
+      "step": "6",
+      "ms": 0
+    },
+    {
+      "step": "7",
+      "ms": 0
+    },
+    {
+      "step": "8",
+      "ms": 19292
+    },
+    {
+      "step": "10",
+      "ms": 38
+    },
+    {
+      "step": "9#1",
+      "ms": 52858
+    },
+    {
+      "step": "11#1",
+      "ms": 29
+    },
+    {
+      "step": "12",
+      "ms": 0
+    }
+  ],
+  "usage": [
+    {
+      "step": "2",
+      "model": "claude-sonnet-5",
+      "input_tokens": 6099,
+      "output_tokens": 2100,
+      "ms": 19845,
+      "stop_reason": "tool_use"
+    },
+    {
+      "step": "5",
+      "model": "claude-sonnet-5",
+      "input_tokens": 7245,
+      "output_tokens": 2596,
+      "ms": 30228,
+      "stop_reason": "tool_use"
+    },
+    {
+      "step": "8",
+      "model": "claude-sonnet-5",
+      "input_tokens": 7633,
+      "output_tokens": 1625,
+      "ms": 19291,
+      "stop_reason": "tool_use"
+    },
+    {
+      "step": "9",
+      "model": "claude-sonnet-5",
+      "input_tokens": 9198,
+      "output_tokens": 5503,
+      "ms": 52858,
+      "stop_reason": "tool_use"
+    }
+  ]
+}

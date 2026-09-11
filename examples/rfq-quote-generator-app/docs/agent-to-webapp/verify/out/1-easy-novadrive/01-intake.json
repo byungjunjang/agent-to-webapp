@@ -1,0 +1,16 @@
+{
+  "job_id": "eb3c4b2b-ed34-4da4-9307-66606200dd74",
+  "received_date": "2026-09-11",
+  "files": [
+    {
+      "name": "customer_rfq_email.pdf",
+      "role": "rfq_email",
+      "media_type": "application/pdf"
+    },
+    {
+      "name": "part_drawing_EV_input_shaft.pdf",
+      "role": "drawing",
+      "media_type": "application/pdf"
+    }
+  ]
+}

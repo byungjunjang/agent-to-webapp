@@ -1,0 +1,10 @@
+{
+  "errors": [],
+  "mode": "provisional",
+  "provisional_fields": [
+    "material",
+    "lot_size",
+    "delivery_days"
+  ],
+  "attempts": 1
+}

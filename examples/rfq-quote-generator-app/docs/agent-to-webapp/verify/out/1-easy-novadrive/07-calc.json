@@ -1,0 +1,98 @@
+{
+  "outcome": "quote",
+  "headline_route": "vacuum_carburizing",
+  "quotes": [
+    {
+      "route_name": "vacuum_carburizing",
+      "equipment_id": "VCQ-1200",
+      "display_name": "Vacuum carburizing + 10 bar gas quench",
+      "status": "recommended",
+      "lot_size": 1200,
+      "case_depth_mid": 0.55,
+      "total_weight_kg": 984,
+      "batches": 6,
+      "cycle_time_hr": 5.5,
+      "cost_per_batch_cny": 2290,
+      "unit_cost_cny": 11.45,
+      "inspection_fee_cny": 0.35,
+      "margin": 1.18,
+      "quote_per_pc_cny": 13.92,
+      "total_quote_cny": 16704
+    },
+    {
+      "route_name": "gas_carburizing",
+      "equipment_id": "GC-900",
+      "display_name": "Gas carburizing + oil quench",
+      "status": "candidate_not_recommended",
+      "lot_size": 1200,
+      "case_depth_mid": 0.55,
+      "total_weight_kg": 984,
+      "batches": 4,
+      "cycle_time_hr": 6.6,
+      "cost_per_batch_cny": 2120,
+      "unit_cost_cny": 7.07,
+      "inspection_fee_cny": 0.35,
+      "margin": 1.18,
+      "quote_per_pc_cny": 8.76,
+      "total_quote_cny": 10512
+    }
+  ],
+  "references": {
+    "not_suitable_routes": [
+      {
+        "route_name": "gas_nitriding",
+        "equipment_id": "GN-600",
+        "display_name": "Gas nitriding",
+        "status": "not_suitable",
+        "lot_size": 1200,
+        "case_depth_mid": 0.55,
+        "total_weight_kg": 984,
+        "batches": 5,
+        "cycle_time_hr": 19.9,
+        "cost_per_batch_cny": 4678,
+        "unit_cost_cny": 19.49,
+        "inspection_fee_cny": 0.35,
+        "margin": 1.18,
+        "quote_per_pc_cny": 23.41,
+        "total_quote_cny": 28092
+      }
+    ],
+    "monthly_volume": [
+      {
+        "route_name": "vacuum_carburizing",
+        "equipment_id": "VCQ-1200",
+        "display_name": "Vacuum carburizing + 10 bar gas quench",
+        "status": "recommended",
+        "lot_size": 3600,
+        "case_depth_mid": 0.55,
+        "total_weight_kg": 2952,
+        "batches": 17,
+        "cycle_time_hr": 5.5,
+        "cost_per_batch_cny": 2290,
+        "unit_cost_cny": 10.81,
+        "inspection_fee_cny": 0.35,
+        "margin": 1.18,
+        "quote_per_pc_cny": 13.17,
+        "total_quote_cny": 47412
+      },
+      {
+        "route_name": "gas_carburizing",
+        "equipment_id": "GC-900",
+        "display_name": "Gas carburizing + oil quench",
+        "status": "candidate_not_recommended",
+        "lot_size": 3600,
+        "case_depth_mid": 0.55,
+        "total_weight_kg": 2952,
+        "batches": 10,
+        "cycle_time_hr": 6.6,
+        "cost_per_batch_cny": 2120,
+        "unit_cost_cny": 5.89,
+        "inspection_fee_cny": 0.35,
+        "margin": 1.18,
+        "quote_per_pc_cny": 7.36,
+        "total_quote_cny": 26496
+      }
+    ],
+    "lot_table": []
+  }
+}

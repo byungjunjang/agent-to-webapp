@@ -1,0 +1,6 @@
+{
+  "status": "approved",
+  "reviewed_by": "verify script (auto)",
+  "reviewed_at": "2026-09-11T13:33:57.181Z",
+  "comment": "자동 승인이지만 검증 실패 항목 있음: email.zh.required"
+}
