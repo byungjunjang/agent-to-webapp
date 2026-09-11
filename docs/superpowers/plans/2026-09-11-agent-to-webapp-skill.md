@@ -1212,7 +1212,7 @@ git commit -m "feat: 5단계 전환 게이트 — 브리프 일곱 절"
 - 2단계 `고정 불가` 통과 시: `terminated: 고정 불가 <날짜>` 기록, `ROUTING_HINT` 출력, 종료코드 0
 - 3단계 `rejudge` 시: 실패 + `rollback 2` 안내
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `tests/cli.test.mjs`:
 
@@ -1352,12 +1352,12 @@ test('status 와 잘못된 명령', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test "tests/*.test.mjs"cli.test.mjs`
 Expected: FAIL — 모든 테스트가 `code` 불일치 (스크립트가 없어 node 가 종료코드 1)
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `.claude/skills/agent-to-webapp/scripts/check_phase.mjs`:
 
@@ -1505,17 +1505,17 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test "tests/*.test.mjs"cli.test.mjs`
 Expected: PASS 9 tests
 
-- [ ] **Step 5: 전체 테스트**
+- [x] **Step 5: 전체 테스트**
 
 Run: `node --test "tests/*.test.mjs"`
 Expected: 모두 PASS (Task 1~7 합계 41 tests)
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add tests/cli.test.mjs .claude/skills/agent-to-webapp/scripts/check_phase.mjs
