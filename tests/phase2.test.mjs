@@ -66,3 +66,11 @@ test('phase2: override 는 조건부로 통과시키고 사유를 경고에 남�
   assert.equal(r.verdict, '조건부 고정 가능');
   assert.ok(r.warnings.some(w => w.includes('override') && w.includes('사이트 3개')));
 });
+
+test('phase2: 관찰이 3회 미만이면 고정 가능을 거부하고 조건부만 받는다', () => {
+  const r = checkPhase2(app(TABLE_OK + '\n판정: 고정 가능\n'), { runs: 1 });
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some(e => e.includes('관찰 1회')));
+  assert.equal(checkPhase2(app(TABLE_OK + '\n판정: 고정 가능\n'), { runs: 3 }).ok, true);
+  assert.equal(checkPhase2(app(TABLE_OK + '\n판정: 조건부 고정 가능(관찰 1회)\n'), { runs: 1 }).ok, true);
+});

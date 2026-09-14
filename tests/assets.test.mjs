@@ -18,3 +18,8 @@ test('hooks.claude.example.json: additionalDirectories 에 <APP>', () => {
   const j = JSON.parse(readFileSync(`${DIR}/hooks.claude.example.json`, 'utf8'));
   assert.deepEqual(j.permissions.additionalDirectories, ['<APP>']);
 });
+
+test('hooks.claude.example.json: 관찰 모델 자리 <MODEL>', () => {
+  const j = JSON.parse(readFileSync(`${DIR}/hooks.claude.example.json`, 'utf8'));
+  assert.equal(j.model, '<MODEL>');
+});

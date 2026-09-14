@@ -46,3 +46,24 @@ test('readStatus/writeStatus: 파일 위치와 없을 때 null', () => {
   assert.ok(readFileSync(p, 'utf8').includes('target: ../t'));
   assert.equal(readStatus(app).runtime, 'claude-code');
 });
+
+// 관찰 횟수와 모델은 STATUS 가 들고 다닌다. 게이트 1·2·4 와 key 가 읽는다.
+test('emptyStatus: runs·model 기본값은 3·sonnet, 인자로 바꾼다', () => {
+  const d = emptyStatus('../x', 'claude-code');
+  assert.equal(d.runs, 3);
+  assert.equal(d.model, 'sonnet');
+  const s = emptyStatus('../x', 'claude-code', { runs: 1, model: 'haiku' });
+  assert.equal(s.runs, 1);
+  assert.equal(s.model, 'haiku');
+});
+
+test('formatStatus/parseStatus: runs·model 줄을 쓰고 읽는다. 없는 옛 파일은 기본값', () => {
+  const st = emptyStatus('../x', 'claude-code', { runs: 1, model: 'opus' });
+  const text = formatStatus(st);
+  assert.ok(text.includes('\nruns: 1\n'));
+  assert.ok(text.includes('\nmodel: opus\n'));
+  assert.deepEqual(parseStatus(text), st);
+  const old = parseStatus('target: ../a\nruntime: claude-code\ncreated: 2026-01-01\nphase-1:\n');
+  assert.equal(old.runs, 3);
+  assert.equal(old.model, 'sonnet');
+});

@@ -12,17 +12,18 @@ export const GAP_MIN_MS = 5 * 60 * 1000;
 
 function runNumber(f) { return Number(f.match(/\d+/)[0]); }
 
-export function checkPhase1(a2wDir) {
+// runs: STATUS 의 관찰 횟수. 기본 3. 그보다 많이 찾으면 runCount 로 알려 게이트 CLI 가 STATUS 를 올린다.
+export function checkPhase1(a2wDir, { runs = MIN_RUNS } = {}) {
   const errors = [];
   const warnings = [];
   const notes = [];
   const runsDir = join(a2wDir, 'runs');
-  if (!existsSync(runsDir)) return { ok: false, errors: ['runs/ 폴더가 없다'], warnings, notes };
+  if (!existsSync(runsDir)) return { ok: false, errors: ['runs/ 폴더가 없다'], warnings, notes, runCount: 0 };
 
   const runFiles = readdirSync(runsDir)
     .filter(f => /^run-\d+\.md$/.test(f))
     .sort((a, b) => runNumber(a) - runNumber(b));
-  if (runFiles.length < MIN_RUNS) errors.push(`run 파일이 ${runFiles.length}개. ${MIN_RUNS}개 이상 필요`);
+  if (runFiles.length < runs) errors.push(`run 파일이 ${runFiles.length}개. ${runs}개 이상 필요`);
   for (const f of runFiles) {
     const text = readFileSync(join(runsDir, f), 'utf8');
     for (const h of RUN_HEADINGS) {
@@ -37,12 +38,12 @@ export function checkPhase1(a2wDir) {
     const entries = readdirSync(inputsDir);
     if (!entries.includes('README.md')) errors.push('runs/inputs/README.md 없음 (왜 이 셋인지)');
     const inputs = entries.filter(e => e !== 'README.md');
-    if (inputs.length < MIN_RUNS) errors.push(`입력이 ${inputs.length}개. ${MIN_RUNS}개 이상 필요`);
+    if (inputs.length < runs) errors.push(`입력이 ${inputs.length}개. ${runs}개 이상 필요`);
   }
 
   warnings.push(...pairToolLogs(runsDir, runFiles));
   notes.push(...writeToolIndexes(runsDir, runFiles));
-  return { ok: errors.length === 0, errors, warnings, notes };
+  return { ok: errors.length === 0, errors, warnings, notes, runCount: runFiles.length };
 }
 
 // jsonl 한 줄의 input(JSON 문자열, 잘렸을 수 있다)에서 대상 하나를 뽑는다.

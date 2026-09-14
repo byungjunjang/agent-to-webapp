@@ -20,7 +20,8 @@ function gitignoreEntries(text) {
   return text.split(/\r?\n/).map(l => l.trim().replace(/^\//, '').replace(/\/$/, '')).filter(Boolean);
 }
 
-export function checkPhase4(a2wDir, { skillDir = null } = {}) {
+// runs: STATUS 의 관찰 횟수. 입력 절도 그만큼만 요구한다.
+export function checkPhase4(a2wDir, { skillDir = null, runs = 3 } = {}) {
   const errors = [];
   const warnings = [];
   const vdir = join(a2wDir, 'verify');
@@ -53,7 +54,7 @@ export function checkPhase4(a2wDir, { skillDir = null } = {}) {
   if (existsSync(rp)) {
     const text = readFileSync(rp, 'utf8');
     if (isBlank(sectionBody(text, REPORT_MODEL))) errors.push(`report.md: '${REPORT_MODEL}' 절에 모델명이 없다`);
-    for (const n of [1, 2, 3]) {
+    for (let n = 1; n <= runs; n++) {
       const body = sectionBody(text, `${REPORT_INPUT}${n}`);
       if (isBlank(body)) errors.push(`report.md: '${REPORT_INPUT}${n}' 절이 없거나 비었다`);
       else if (!body.split('\n').some(l => l.trim().startsWith('|'))) {

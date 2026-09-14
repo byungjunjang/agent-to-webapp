@@ -7,7 +7,7 @@
 ## 1. 서버 쪽 호출
 Claude 를 부르는 코드와 API 키는 Route Handler 또는 Server Action 에만 둔다. 브라우저 번들에 키가 가지 않는다.
 - LLM 단계: <workflow.md 의 LLM 단계 번호와 이름>
-- 환경변수: ANTHROPIC_API_KEY (Vercel 프로젝트 설정), A2W_MODEL (선택)
+- 환경변수: ANTHROPIC_API_KEY (Vercel 프로젝트 설정), A2W_MODEL=<STATUS 의 model ID. 관찰·재검증과 같은 모델>
 - 로컬 `next dev` 는 이 폴더의 `.env.local` 에 키를 둔다(create-next-app 의 .gitignore 가 가린다). 스킬 `.env` 는 4단계 검증용이라 웹 앱이 읽지 않는다
 
 ## 2. 실행 시간 분할

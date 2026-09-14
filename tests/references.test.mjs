@@ -51,3 +51,14 @@ test('phase-N.md 가 자기 프롬프트를 담고, 게이트 상수와 문자�
   const p5 = doc(5);
   assert.ok(p5.includes('create-next-app') && p5.includes('src/lib/workflow/'));
 });
+
+test('--runs 와 --model 이 SKILL.md 와 단계 문서에 있다', () => {
+  const skill = readFileSync('.claude/skills/agent-to-webapp/SKILL.md', 'utf8');
+  assert.ok(skill.includes('--runs') && skill.includes('--model'));
+  const p1 = readFileSync(`${REF}/phase-1.md`, 'utf8');
+  assert.ok(p1.includes('<MODEL>') && p1.includes('runs'));
+  const p2 = readFileSync(`${REF}/phase-2.md`, 'utf8');
+  assert.ok(p2.includes('관찰 <RUNS>회'), '프롬프트 2 가 관찰 횟수를 말한다');
+  const p4 = readFileSync(`${REF}/phase-4.md`, 'utf8');
+  assert.ok(p4.includes('A2W_MODEL') && p4.includes('STATUS'));
+});

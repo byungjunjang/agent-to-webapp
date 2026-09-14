@@ -63,3 +63,16 @@ test('CLI key: 셸 환경변수가 있으면 Claude Code 과금 경고를 낸다
   assert.ok(r.out.includes('과금'));
   assert.ok(!(r.out + r.err).includes(FAKE));
 });
+
+test('CLI key: STATUS 의 model 을 A2W_MODEL 로 실행 명령에 붙인다', () => {
+  const s = skillDir();
+  write(s, '.env', 'ANTHROPIC_API_KEY=' + FAKE + '\n');
+  const app = makeApp();
+  const target = mkdtempSync(join(tmpdir(), 'a2w-target-'));
+  assert.equal(cli(app, {}, 'init', '--target', target, '--runtime', 'claude-code', '--model', 'haiku').code, 0);
+  const r = cli(app, {}, 'key', '--skill-dir', s);
+  assert.equal(r.code, 0, r.err);
+  assert.ok(r.out.includes('A2W_MODEL=claude-haiku-4-5-20251001 node'), r.out);
+  const noStatus = cli(makeApp(), {}, 'key', '--skill-dir', s);
+  assert.ok(noStatus.out.includes('A2W_MODEL=claude-sonnet-5 node'), noStatus.out);
+});

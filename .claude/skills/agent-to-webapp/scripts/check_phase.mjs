@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // agent-to-webapp 게이트 CLI. 작업 폴더(<이름>-app/)에서 실행한다.
-//   node check_phase.mjs init --target <경로> --runtime <claude-code|codex>
+//   node check_phase.mjs init --target <경로> --runtime <claude-code|codex> [--runs N] [--model <sonnet|opus|haiku|ID>]
 //   node check_phase.mjs status
 //   node check_phase.mjs <1-5> [--approve] [--batch] [--override "<사유>"]
 //   node check_phase.mjs rollback <N>
@@ -9,13 +9,14 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { A2W_DIR, RUNTIMES, emptyStatus, readStatus, writeStatus, formatStatus, today } from './lib/status.mjs';
+import { A2W_DIR, RUNTIMES, DEFAULT_RUNS, DEFAULT_MODEL, emptyStatus, readStatus, writeStatus, formatStatus, today } from './lib/status.mjs';
 import { checkPhase1 } from './lib/phase1.mjs';
 import { checkPhase2 } from './lib/phase2.mjs';
 import { checkPhase3 } from './lib/phase3.mjs';
 import { checkPhase4 } from './lib/phase4.mjs';
 import { checkPhase5 } from './lib/phase5.mjs';
 import { KEY_NAME, LABELS, findKey } from './lib/key.mjs';
+import { MODEL_ALIASES, resolveModelId } from './lib/models.mjs';
 
 export const SKILL_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const NEEDS_APPROVAL = [2, 3];
@@ -29,7 +30,7 @@ export const ENV_WARNING =
   `경고: 셸 환경변수 ${KEY_NAME} 가 있다. Claude Code 도 구독 대신 이 키로 과금한다. 스킬 .env 로 옮기고 환경변수는 지우기를 권한다`;
 const USAGE = [
   '사용법 (작업 폴더에서):',
-  '  node check_phase.mjs init --target <경로> --runtime <claude-code|codex>',
+  `  node check_phase.mjs init --target <경로> --runtime <claude-code|codex> [--runs N] [--model <${Object.keys(MODEL_ALIASES).join('|')}|claude-…>]`,
   '  node check_phase.mjs status',
   '  node check_phase.mjs <1-5> [--approve] [--batch] [--override "<사유>"]',
   '  node check_phase.mjs rollback <N>',
@@ -37,10 +38,10 @@ const USAGE = [
 ].join('\n');
 const BOOL_FLAGS = new Set(['approve', 'batch']);
 const CHECKS = {
-  1: (d) => checkPhase1(d),
-  2: (d, o) => checkPhase2(d, o),
+  1: (d, o) => checkPhase1(d, { runs: o.runs }),
+  2: (d, o) => checkPhase2(d, { override: o.override, runs: o.runs }),
   3: (d) => checkPhase3(d),
-  4: (d) => checkPhase4(d, { skillDir: SKILL_DIR }),
+  4: (d, o) => checkPhase4(d, { skillDir: SKILL_DIR, runs: o.runs }),
   5: (d) => checkPhase5(d),
 };
 
@@ -65,11 +66,15 @@ function init(cwd, flags, out, err) {
     err(`init 은 --target <경로> --runtime ${RUNTIMES.join('|')} 가 필요하다`); return 2;
   }
   if (!existsSync(resolve(cwd, target))) { err(`대상 폴더가 없다: ${target}`); return 2; }
+  const runs = flags.runs === undefined ? DEFAULT_RUNS : Number(flags.runs);
+  if (!Number.isInteger(runs) || runs < 1) { err('--runs 는 1 이상의 정수다 (기본 3. 3 미만이면 2단계 판정은 조건부까지)'); return 2; }
+  const model = flags.model === undefined ? DEFAULT_MODEL : String(flags.model);
+  if (!resolveModelId(model)) { err(`--model 은 ${Object.keys(MODEL_ALIASES).join('|')} 또는 claude- 로 시작하는 모델 ID 다: ${model}`); return 2; }
   for (const d of ['runs/inputs', 'runs/tools']) mkdirSync(join(cwd, A2W_DIR, d), { recursive: true });
-  const st = emptyStatus(target, runtime);
+  const st = emptyStatus(target, runtime, { runs, model });
   st.log.push(`${today()} init`);
   writeStatus(cwd, st);
-  out(`STATUS 생성: target=${target} runtime=${runtime}`);
+  out(`STATUS 생성: target=${target} runtime=${runtime} runs=${runs} model=${model}`);
   return 0;
 }
 
@@ -104,7 +109,9 @@ function key(cwd, flags, out, err) {
   const others = r.sources.filter(s => s !== r.active).map(s => LABELS[s]);
   out(`API 키: ${LABELS[r.active]} 에서 읽는다${others.length ? ` (가려진 곳: ${others.join(', ')})` : ''}`);
   const skillEnv = r.skillFile.split(sep).join('/');
-  out(`실행: node --env-file-if-exists="${skillEnv}" --env-file-if-exists=.env run.ts <입력 폴더> [--from N]`);
+  // 재검증은 관찰과 같은 모델(STATUS 의 model)로 돈다. STATUS 가 없으면 기본 모델
+  const model = resolveModelId(readStatus(cwd)?.model ?? DEFAULT_MODEL) ?? resolveModelId(DEFAULT_MODEL);
+  out(`실행: A2W_MODEL=${model} node --env-file-if-exists="${skillEnv}" --env-file-if-exists=.env run.ts <입력 폴더> [--from N]`);
   return 0;
 }
 
@@ -116,13 +123,19 @@ function gate(cwd, n, flags, out, err) {
 
   const a2wDir = join(cwd, A2W_DIR);
   const override = typeof flags.override === 'string' ? flags.override : null;
-  const r = CHECKS[n](a2wDir, { override });
+  const r = CHECKS[n](a2wDir, { override, runs: st.runs });
   for (const w of r.warnings) out(`경고: ${w}`);
   for (const m of r.notes ?? []) out(m);
   if (!r.ok) {
     for (const e of r.errors) err(`실패: ${e}`);
     if (n === 3 && r.rejudge) err('규칙화 불가 항목이 순서를 흔든다. 2단계로 돌아가라: node check_phase.mjs rollback 2');
     return 1;
+  }
+  // 관찰을 더 돌려 왔으면 STATUS 의 runs 를 올린다. 2단계 판정 등급이 여기에 달렸다
+  if (n === 1 && r.runCount > st.runs) {
+    st.log.push(`${today()} runs ${st.runs} → ${r.runCount}`);
+    out(`관찰 ${r.runCount}회. STATUS 의 runs 를 ${st.runs} → ${r.runCount} 으로 올렸다`);
+    st.runs = r.runCount;
   }
 
   const wantsApproval = NEEDS_APPROVAL.includes(n) && !flags.batch;

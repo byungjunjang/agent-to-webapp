@@ -1,6 +1,9 @@
 {
+  "model": "<MODEL>",
   "permissions": {
-    "additionalDirectories": ["<APP>"]
+    "additionalDirectories": [
+      "<APP>"
+    ]
   },
   "hooks": {
     "PostToolUse": [

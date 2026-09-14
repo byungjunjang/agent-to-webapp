@@ -131,3 +131,58 @@ test('status 와 잘못된 명령', () => {
   assert.equal(cli(app, 'nope').code, 2);
   assert.equal(cli(app, 'rollback', '9').code, 2);
 });
+
+// 관찰 횟수·모델 옵션. runs 가 3 미만이면 판정은 조건부까지만.
+function freshTarget(app) {
+  const target = join(app, '..', 'target-' + Date.now() + Math.random().toString(36).slice(2, 6));
+  mkdirSync(target, { recursive: true });
+  return target;
+}
+
+test('init --runs 1 --model haiku → STATUS 에 기록. 잘못된 값은 2', () => {
+  const app = makeApp();
+  const target = freshTarget(app);
+  assert.equal(cli(makeApp(), 'init', '--target', target, '--runtime', 'claude-code', '--runs', '0').code, 2);
+  assert.equal(cli(makeApp(), 'init', '--target', target, '--runtime', 'claude-code', '--runs', 'x').code, 2);
+  assert.equal(cli(makeApp(), 'init', '--target', target, '--runtime', 'claude-code', '--model', 'gpt-5').code, 2);
+  const r = cli(app, 'init', '--target', target, '--runtime', 'claude-code', '--runs', '1', '--model', 'haiku');
+  assert.equal(r.code, 0, r.err);
+  assert.ok(status(app).includes('runs: 1\n'));
+  assert.ok(status(app).includes('model: haiku\n'));
+  const { app: def } = initedApp();
+  assert.ok(status(def).includes('runs: 3\n'));
+  assert.ok(status(def).includes('model: sonnet\n'));
+});
+
+function initedApp1() {
+  const app = makeApp();
+  const target = freshTarget(app);
+  assert.equal(cli(app, 'init', '--target', target, '--runtime', 'claude-code', '--runs', '1').code, 0);
+  write(app, `${A2W}/runs/run-1.md`, RUN);
+  write(app, `${A2W}/runs/inputs/README.md`, 'r');
+  write(app, `${A2W}/runs/inputs/a`, 'x');
+  return app;
+}
+
+test('runs 1: 1단계는 run 1개로 통과, 2단계는 고정 가능을 거부하고 조건부는 받는다', () => {
+  const app = initedApp1();
+  const r1 = cli(app, '1');
+  assert.equal(r1.code, 0, r1.err);
+  write(app, `${A2W}/verdict.md`, VERDICT_OK);
+  const r2 = cli(app, '2', '--approve');
+  assert.equal(r2.code, 1);
+  assert.ok(r2.err.includes('관찰 1회'), r2.err);
+  write(app, `${A2W}/verdict.md`, VERDICT_OK.replace('판정: 고정 가능', '판정: 조건부 고정 가능(관찰 1회)'));
+  const r3 = cli(app, '2', '--approve');
+  assert.equal(r3.code, 0, r3.err);
+});
+
+test('runs 1 로 시작했어도 run 3개를 찾으면 STATUS 의 runs 를 3 으로 올린다', () => {
+  const app = initedApp1();
+  for (const n of [2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
+  for (const f of ['b', 'c']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  const r = cli(app, '1');
+  assert.equal(r.code, 0, r.err);
+  assert.ok(status(app).includes('runs: 3\n'));
+  assert.ok(status(app).includes('runs 1 → 3'));
+});

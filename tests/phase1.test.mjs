@@ -133,3 +133,14 @@ test('phase1: 짝짓기 뒤 runs/tools/ 가 비면 지우고, 남은 파일이 �
   checkPhase1(join(keep, A2W));
   assert.ok(existsSync(join(keep, A2W, 'runs/tools/note.txt')));
 });
+
+test('phase1: runs 옵션이 요구 개수를 정하고 runCount 를 돌려준다', () => {
+  const app = makeApp();
+  write(app, `${A2W}/runs/run-1.md`, RUN);
+  write(app, `${A2W}/runs/inputs/README.md`, 'r');
+  write(app, `${A2W}/runs/inputs/a`, 'x');
+  assert.equal(checkPhase1(join(app, A2W)).ok, false);
+  const r = checkPhase1(join(app, A2W), { runs: 1 });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.runCount, 1);
+});

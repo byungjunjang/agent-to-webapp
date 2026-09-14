@@ -38,7 +38,10 @@ export function agentQuadrantRows(text) {
   return rows;
 }
 
-export function checkPhase2(a2wDir, { override = null } = {}) {
+// 확정 판정에 필요한 관찰 횟수. 실행 간 차이를 보려면 셋은 있어야 한다.
+export const FULL_RUNS = 3;
+
+export function checkPhase2(a2wDir, { override = null, runs = FULL_RUNS } = {}) {
   const warnings = [];
   const p = join(a2wDir, 'verdict.md');
   if (!existsSync(p)) return { ok: false, errors: ['verdict.md 없음'], warnings, verdict: null, agentRows: [] };
@@ -57,6 +60,9 @@ export function checkPhase2(a2wDir, { override = null } = {}) {
     errors.push(`4번째 칸(${AGENT_QUADRANT}) 항목이 있는데 판정이 '고정 가능': ${agentRows.join(', ')}. 조건부 또는 불가로 고쳐라`);
   } else if (agentRows.length > 0) {
     warnings.push(`4번째 칸 항목: ${agentRows.join(', ')}`);
+  }
+  if (verdict === '고정 가능' && runs < FULL_RUNS) {
+    errors.push(`관찰 ${runs}회로는 '고정 가능' 을 낼 수 없다. 실행 간 차이를 못 봤다. '조건부 고정 가능(관찰 ${runs}회)' 또는 '고정 불가' 로 고쳐라`);
   }
   return { ok: errors.length === 0, errors, warnings, verdict, agentRows };
 }

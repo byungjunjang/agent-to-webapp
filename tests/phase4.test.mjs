@@ -119,3 +119,9 @@ test('phase4: 입력 절에 차이 표가 없으면 경고', () => {
   const withTable = REPORT.replace('차이 없음', '| 항목 | 로컬 | 스크립트 | 판정 |\n|---|---|---|---|\n| 단가 | 1 | 1 | 일치 |');
   assert.ok(!checkPhase4(verifyApp(withTable)).warnings.some(w => w.includes('입력 1') && w.includes('차이 표')));
 });
+
+test('phase4: runs 가 1 이면 입력 절도 1개만 요구한다', () => {
+  const one = REPORT.replace('## 입력 2: normal\n수량 표기 차이\n## 입력 3: edge\n에스컬레이션 동일\n', '');
+  assert.ok(checkPhase4(verifyApp(one)).errors.some(e => e.includes('입력 2')));
+  assert.deepEqual(checkPhase4(verifyApp(one), { runs: 1 }).errors, []);
+});
