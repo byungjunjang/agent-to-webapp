@@ -14,25 +14,43 @@
 - 1. 서버 쪽 호출의 `A2W_MODEL` 에는 STATUS 의 `model` ID 를 적는다. 관찰·재검증과 같은 모델로 시작한다
 - 스타일(선택) 절은 학습자가 원할 때만 채운다
 
-## 2. 게이트
+## 2. prompt.md 작성
+
+아래 "프롬프트 5" 를 `$A2W/prompt.md` 에 남긴다. 5단계는 이 파일로 끝난다. 터미널에만 보여 주면 스크롤에 묻히고, 다른 기기나
+다음 날의 새 세션에서는 찾을 수 없다. 형식은 아래와 같고, 코드 블록 안은 프롬프트 5 원문 그대로다. 게이트가 코드 블록에서
+`PROMPT_MUST`(브리프·workflow 경로, `create-next-app`, `src/lib/workflow/`)를 찾는다.
+
+````
+# 다음 세션 프롬프트: <이름>
+
+`$APP` 에서 새 세션을 열고 아래 블록을 그대로 붙여넣는다. 브리프: `docs/agent-to-webapp/port-brief.md`
+
+```
+<프롬프트 5 원문>
+```
+````
+
+학습자가 프롬프트를 고쳐 쓰면(스타일 지시를 붙이는 등) prompt.md 를 고친다. 프롬프트 5 원문이 바뀌면 이 문서를 고친다.
+
+## 3. 게이트
 
 ```
 node $SKILL_DIR/scripts/check_phase.mjs 5
 ```
 
-## 3. 대상 정리 안내
+## 4. 대상 정리 안내
 
 통과하면 학습자에게 아래를 안내한다. 스킬이 직접 지워도 된다(로컬 전용 파일이다).
 
 - `$TARGET/CLAUDE.local.md`(또는 `AGENTS.override.md`)의 `<!-- agent-to-webapp:start -->` ~ `end` 블록 삭제
 - `$TARGET/.claude/settings.local.json`(또는 `.codex/hooks.json`)의 훅 항목과 `additionalDirectories` 항목 삭제
 
-## 4. 다음 세션
+## 5. 다음 세션
 
-학습자에게 아래를 그대로 보여주고 끝낸다.
+학습자에게 아래를 보여주고 끝낸다. 그 아래에 prompt.md 의 코드 블록을 그대로 붙인다.
 
 ```
-5단계 통과. 이제 $APP 에서 새 세션을 열고 아래를 붙여넣으세요.
+5단계 통과. 이제 $APP 에서 새 세션을 열고 docs/agent-to-webapp/prompt.md 의 블록을 붙여넣으세요.
 ```
 
 ### 프롬프트 5 — 웹 앱 전환

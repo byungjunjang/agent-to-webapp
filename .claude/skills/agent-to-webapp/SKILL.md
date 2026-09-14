@@ -50,7 +50,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 | 2 판정 | references/phase-2.md | verdict.md (서브에이전트가 씀) | `check_phase.mjs 2 --approve` | 학습자 승인. 고정 불가면 종료 |
 | 3 고정 | references/phase-3.md | workflow.md | `check_phase.mjs 3 --approve` | 학습자 승인. 재판정이면 `rollback 2` |
 | 4 재검증 | references/phase-4.md | verify/, verify/report.md | `check_phase.mjs 4` | 차이 허용 여부는 학습자 |
-| 5 전환 | references/phase-5.md | port-brief.md | `check_phase.mjs 5` | 새 세션 안내 뒤 종료 |
+| 5 전환 | references/phase-5.md | port-brief.md, prompt.md | `check_phase.mjs 5` | 새 세션 안내 뒤 종료 |
 
 각 단계는 그 단계의 `references/phase-N.md` 를 읽고 그대로 한다. 프롬프트는 그 문서 안에 있다.
 2×2 표와 결정 축은 `references/decision-axes.md`, 브리프 틀은 `references/port-brief-template.md`,
@@ -75,5 +75,6 @@ STATUS 에 `terminated` 가 있으면 종료된 과제라고 알리고 멈춘다
 
 ## 끝
 
-5단계 통과 후 `$TARGET` 의 로컬 전용 파일 정리를 안내하고, 프롬프트 5 를 보여주고 끝낸다.
+5단계 통과 후 `$TARGET` 의 로컬 전용 파일 정리를 안내하고, `$A2W/prompt.md` 경로와 그 안의 프롬프트 5 를 보여주고 끝낸다.
+다음 세션이 붙여넣을 프롬프트는 터미널에만 두지 않고 항상 파일로 남긴다.
 바이브 코딩은 다음 세션의 일이다.

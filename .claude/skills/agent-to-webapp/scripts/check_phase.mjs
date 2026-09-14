@@ -14,7 +14,7 @@ import { checkPhase1 } from './lib/phase1.mjs';
 import { checkPhase2 } from './lib/phase2.mjs';
 import { checkPhase3 } from './lib/phase3.mjs';
 import { checkPhase4 } from './lib/phase4.mjs';
-import { checkPhase5 } from './lib/phase5.mjs';
+import { checkPhase5, PROMPT_FILE } from './lib/phase5.mjs';
 import { KEY_NAME, LABELS, findKey } from './lib/key.mjs';
 import { MODEL_ALIASES, resolveModelId } from './lib/models.mjs';
 
@@ -158,6 +158,7 @@ function gate(cwd, n, flags, out, err) {
   }
   writeStatus(cwd, st);
   out(`${n}단계 통과${r.verdict ? ` (판정: ${r.verdict})` : ''}`);
+  if (n === 5) out(`다음 세션: 이 폴더에서 새 세션을 열고 ${A2W_DIR.replaceAll("\\", "/")}/${PROMPT_FILE} 의 코드 블록을 붙여넣는다`);
   return 0;
 }
 

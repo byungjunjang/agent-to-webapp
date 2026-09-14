@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { BRIEF_HEADINGS } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
+import { BRIEF_HEADINGS, PROMPT_FILE, PROMPT_MUST } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
 import { RUN_HEADINGS } from '../.claude/skills/agent-to-webapp/scripts/lib/phase1.mjs';
 import { QUADRANTS, VERDICTS, VERDICT_PREFIX } from '../.claude/skills/agent-to-webapp/scripts/lib/phase2.mjs';
 import { FIELD_ACTOR, FIELD_IN, FIELD_OUT, FIELD_FAIL, UNRULED_HEADING, DIAGRAM_HEADING, COMMON_SCHEMA_HEADING } from '../.claude/skills/agent-to-webapp/scripts/lib/phase3.mjs';
@@ -49,7 +49,9 @@ test('phase-N.md 가 자기 프롬프트를 담고, 게이트 상수와 문자�
   for (const s of [REPORT_MODEL, REPORT_INPUT, REPORT_HUMAN, REPORT_EXTERNAL, REPORT_FIXES]) assert.ok(p4.includes(s), s);
   assert.ok(p4.includes('verify-template') && p4.includes('steps/index.ts') && p4.includes('--from'));
   const p5 = doc(5);
-  assert.ok(p5.includes('create-next-app') && p5.includes('src/lib/workflow/'));
+  const prompt5 = p5.slice(p5.indexOf('### 프롬프트 5'));
+  for (const m of PROMPT_MUST) assert.ok(prompt5.includes(m), `프롬프트 5 에 ${m}`);
+  assert.ok(p5.includes(`$A2W/${PROMPT_FILE}`), '5단계가 prompt.md 를 남기게 한다');
 });
 
 test('--runs 와 --model 이 SKILL.md 와 단계 문서에 있다', () => {

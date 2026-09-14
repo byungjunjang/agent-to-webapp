@@ -14,7 +14,7 @@
 - 4단계 러너·라이브러리는 `assets/verify-template/` 이 정본이다. 재검증 중 러너를 고쳐야 했다면 그 수정은
   여기로 돌아와야 한다(§2-21). 헤딩·필드 같은 형식 문자열은 `scripts/lib/phaseN.mjs` 상수와 같아야 하고
   `tests/references.test.mjs` 가 확인한다
-- 남은 일: 경량화 뒤 고정 가능 경로 재-dogfood(템플릿 구성 실측), 고정 불가 경로 dogfood(크롤링할 URL 3개 필요),
+- 남은 일: 재-dogfood(2026-09-14) 되먹일 후보 반영, 고정 불가 경로 dogfood(크롤링할 URL 3개 필요),
   LLM-Wiki `/wiki-ingest`. 열린 항목은 기획서 §14
 
 ## 스킬을 고친 뒤 다시 설치하기

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { makeApp, write, A2W } from './helpers.mjs';
-import { checkPhase5, BRIEF_HEADINGS } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
+import { checkPhase5, BRIEF_HEADINGS, PROMPT_FILE, PROMPT_MUST } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
 
 const BRIEF = `# port brief
 ${BRIEF_HEADINGS[0]}
@@ -21,9 +21,17 @@ ${BRIEF_HEADINGS[6]}
 배포 후 runs/inputs/ 3건을 넣어 verify/report.md 와 비교
 `;
 
-function app(text) {
+const PROMPT = `# 다음 세션 프롬프트: demo
+
+\`\`\`
+${PROMPT_MUST.join(' 를 읽고\n- ')}
+\`\`\`
+`;
+
+function app(text, prompt = PROMPT) {
   const a = makeApp();
   write(a, `${A2W}/port-brief.md`, text);
+  if (prompt !== null) write(a, `${A2W}/${PROMPT_FILE}`, prompt);
   return join(a, A2W);
 }
 
@@ -49,4 +57,17 @@ test('phase5: 상태 저장 절에 Supabase 또는 DB 없음 명시', () => {
 
 test('phase5: 파일 없으면 실패', () => {
   assert.equal(checkPhase5(join(makeApp(), A2W)).ok, false);
+});
+
+test('phase5: prompt.md 가 없으면 실패', () => {
+  const r = checkPhase5(app(BRIEF, null));
+  assert.ok(r.errors.some(e => e.includes(PROMPT_FILE) && e.includes('없음')));
+});
+
+test('phase5: prompt.md 에 코드 블록이 없거나 프롬프트 5 문자열이 빠지면 실패', () => {
+  const noBlock = checkPhase5(app(BRIEF, `# 다음 세션\n${PROMPT_MUST.join('\n')}\n`));
+  assert.ok(noBlock.errors.some(e => e.includes('코드 블록이 없다')));
+  const partial = checkPhase5(app(BRIEF, PROMPT.replace('create-next-app', 'next')));
+  assert.ok(partial.errors.some(e => e.includes('create-next-app')));
+  assert.equal(partial.errors.length, 1);
 });
