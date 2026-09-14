@@ -4,7 +4,8 @@
 스킬 하나로 만든다.
 
 - 시작 전에 `docs/superpowers/specs/2026-09-11-agent-to-webapp-design.md` 를 읽는다. 결정 사항은
-  그 문서 §2 가 정본이다. 구현 계획은 `docs/superpowers/plans/2026-09-11-agent-to-webapp-skill.md`
+  그 문서 §2 가 정본이다. 구현 계획서는 `docs/superpowers/plans/archive/` 에 이력으로만 둔다. 읽지 않아도 된다
+- 사람용 안내(설치·사용)는 루트 `README.md`. 이 파일은 Claude 를 위한 작업 규칙이다
 - 스킬 정본은 `.claude/skills/agent-to-webapp/`. 유저 스코프(`~/.claude/skills/agent-to-webapp/`)에는
   아래 "스킬을 고친 뒤 다시 설치하기" 대로 설치한다
 - 개념과 프롬프트 원문은 LLM-Wiki `wiki/vibe-coding/local-agent-to-web-app.md`. 실행판은
@@ -13,7 +14,8 @@
 - 4단계 러너·라이브러리는 `assets/verify-template/` 이 정본이다. 재검증 중 러너를 고쳐야 했다면 그 수정은
   여기로 돌아와야 한다(§2-21). 헤딩·필드 같은 형식 문자열은 `scripts/lib/phaseN.mjs` 상수와 같아야 하고
   `tests/references.test.mjs` 가 확인한다
-- 남은 일: 고정 불가 경로 dogfood(계획 Task 16, 크롤링할 URL 3개 필요), LLM-Wiki `/wiki-ingest`
+- 남은 일: 경량화 뒤 고정 가능 경로 재-dogfood(템플릿 구성 실측), 고정 불가 경로 dogfood(크롤링할 URL 3개 필요),
+  LLM-Wiki `/wiki-ingest`. 열린 항목은 기획서 §14
 
 ## 스킬을 고친 뒤 다시 설치하기
 
@@ -36,7 +38,8 @@
 
 ## dogfood 할 때
 
-- 저장소 밖에서 돌린다. `examples/` 안에서 돌리면 이 저장소 CLAUDE.md 가 관찰 세션에 섞인다. 끝나면
-  `-app/docs/agent-to-webapp/` 만 `examples/` 로 옮긴다(`verify/node_modules` 는 뺀다)
+- 저장소 밖에서 돌린다. 저장소 안에서 돌리면 이 저장소 CLAUDE.md 가 관찰 세션에 섞인다. 대상은 `.demo-projects` 의
+  사본을 쓴다. 산출물은 저장소에 두지 않는다(`examples/` 는 2026-09-14 에 지웠다). 시행착오와 결과 요약만 LLM-Wiki
+  `raw/practice/` 로 보낸다
 - Windows Git Bash 에서 `claude -p "/agent-to-webapp …"` 로 부를 때는 `MSYS_NO_PATHCONV=1` 을 붙인다.
   안 붙이면 첫 인자가 `C:/Program Files/Git/…` 로 바뀐다

@@ -1,5 +1,5 @@
 // 1단계 관찰 게이트: run 3개 + 헤딩, 입력 3개 + README, 훅 기록 짝짓기, 도구 호출 색인.
-import { readdirSync, readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync, renameSync, rmdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { hasHeading } from './md.mjs';
 
@@ -166,5 +166,7 @@ export function pairToolLogs(runsDir, runFiles) {
     const dest = join(runsDir, run.replace(/\.md$/, '.tools.jsonl'));
     if (!existsSync(dest)) renameSync(join(toolsDir, log.f), dest);
   });
+  // 다 옮겨서 비었으면 폴더도 치운다. 사람이 둔 파일이 있으면 그대로 둔다
+  if (readdirSync(toolsDir).length === 0) rmdirSync(toolsDir);
   return warnings;
 }

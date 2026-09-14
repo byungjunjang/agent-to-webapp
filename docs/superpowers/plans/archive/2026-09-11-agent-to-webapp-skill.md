@@ -1,4 +1,5 @@
 # agent-to-webapp 스킬 구현 계획
+> 2026-09-11 작성, 구현 완료. 이력으로 보관한다. 열린 항목은 기획서 §14 에 있고 이 문서의 체크박스는 갱신하지 않는다.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

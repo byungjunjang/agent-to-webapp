@@ -20,11 +20,15 @@ test('port-brief-template.md 는 BRIEF_HEADINGS 일곱 개를 순서대로 담�
   assert.ok(text.includes('## 스타일 (선택)'));
 });
 
-test('deploy-checklist.md 가 있고 체크박스가 5개 이상', () => {
-  const p = `${REF}/deploy-checklist.md`;
-  assert.ok(existsSync(p));
-  const boxes = readFileSync(p, 'utf8').match(/^- \[ \] /gm) ?? [];
-  assert.ok(boxes.length >= 5, `${boxes.length}개`);
+test('배포 확인 체크리스트는 브리프 틀 7절 안에 있다 (다음 세션이 스킬 경로 없이 읽는다)', () => {
+  assert.ok(!existsSync(`${REF}/deploy-checklist.md`), 'deploy-checklist.md 는 브리프 틀로 흡수됐다');
+  const text = readFileSync(`${REF}/port-brief-template.md`, 'utf8');
+  const start = text.indexOf('\n## 7. 배포 후 검증\n');
+  const end = text.indexOf('\n## ', start + 1);
+  const section = text.slice(start, end === -1 ? undefined : end);
+  const boxes = section.match(/^- \[ \] /gm) ?? [];
+  assert.ok(boxes.length >= 5, `7절 체크박스 ${boxes.length}개`);
+  assert.ok(section.includes('deploy-report.md'));
 });
 
 // 경량화: 프롬프트는 단계 문서 안에 있다. 게이트가 찾는 고정 문자열이 그 프롬프트에 들어 있어야 한다.

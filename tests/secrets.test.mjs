@@ -13,7 +13,7 @@ function ignored(path) {
 
 test('gitignore: 스킬 .env 와 verify/.env 는 가리고 .env.example 은 올린다', () => {
   assert.ok(ignored(`${SKILL}/.env`));
-  assert.ok(ignored('examples/x-app/docs/agent-to-webapp/verify/.env'));
+  assert.ok(ignored('some-app/docs/agent-to-webapp/verify/.env'));
   assert.ok(!ignored(`${SKILL}/.env.example`));
 });
 

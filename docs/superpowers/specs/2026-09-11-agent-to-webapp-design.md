@@ -1,7 +1,7 @@
 # 설계: agent-to-webapp 스킬 — 로컬 에이전트를 웹 앱으로 옮기는 고정 공정
 
 작성 2026-09-11 · 상태: 승인(brainstorming 1라운드 → grill-me 2라운드 반영, 2026-09-11) ·
-구현: 계획 `docs/superpowers/plans/2026-09-11-agent-to-webapp-skill.md`, 고정 가능 경로 dogfood 통과(2026-09-11) ·
+구현 완료(계획서는 `docs/superpowers/plans/archive/`), 고정 가능 경로 dogfood 통과(2026-09-11) ·
 남은 일: 고정 불가 경로 dogfood(§14), `/wiki-ingest`
 
 이 문서는 LLM-Wiki 의 `wiki/vibe-coding/local-agent-to-web-app.md` 를 실행 절차로 옮기는
@@ -253,7 +253,6 @@ workos/agent-to-webapp/
       hooks.claude.example.json          settings.local.json 에 합칠 훅 + additionalDirectories
       hooks.codex.example.json           .codex/hooks.json 예시
       verify-template/                   4단계 러너 run.ts, lib/step.ts(단계 계약), lib/llm.ts, package.json, .gitignore. verify/ 로 복사된다
-  examples/                              스킬 검증용 데모 에이전트 (§10)
 ```
 
 런타임은 Node 하나다. 학습자는 Next.js 때문에 어차피 Node 를 깔고, Windows 비개발자 PC 에
@@ -437,38 +436,27 @@ Root Directory 하나를 보고, 클라우드 에이전트는 저장소를 통�
 
 ## 10. 스킬 자체의 검증
 
-`examples/` 에 데모 에이전트를 두고 스킬을 끝까지 돌린다. 경로 둘을 다 밟아야 한다.
+게이트·훅·러너는 `tests/` 의 단위 테스트(`node --test "tests/*.test.mjs"`)로 검증한다. 고정 불가 경로(2단계 종료·
+라우팅 안내·이후 단계 거부)도 여기서 보증한다.
 
-| 경로 | 데모 | 성공 기준 |
-|---|---|---|
-| 고정 가능 | `rfq-quote-generator` | 1~5단계 게이트를 전부 통과하고 `examples/rfq-quote-generator-app/docs/agent-to-webapp/` 이 채워진다. `verify/report.md` 의 3건이 로컬 결과와 허용 범위 안에서 일치한다 |
-| 고정 불가 | `competitor-review-crawler` | 2단계에서 멈추고 STATUS 에 종료가 적히며 Agent SDK 트랙 안내가 나온다. 3단계 이후 파일이 생기지 않는다 |
+스킬 전체는 dogfood 로 검증한다. 대상은 `.demo-projects` 의 데모 에이전트 사본이고, **저장소 밖**(세션 스크래치 등)에
+대상 사본과 `<이름>-app/` 을 만들어 유저 스코프 설치본으로 돌린다. 저장소 안에서 돌리면 이 저장소 CLAUDE.md("기획서를
+먼저 읽어라")와 WorkOS CLAUDE.md 가 관찰 세션에 함께 로드돼 에이전트 행동이 바뀐다(2026-09-11 발견). 학습자 PC 에서도
+같은 문제가 생길 수 있어 1단계가 상위 폴더 CLAUDE.md 를 경고한다.
 
-후보는 `.demo-projects` 를 읽고 골랐다(2026-09-11 조사).
+| 경로 | 데모 | 성공 기준 | 상태 |
+|---|---|---|---|
+| 고정 가능 | `rfq-quote-generator` | 1~5단계 게이트 통과. `verify/report.md` 의 3건이 로컬 결과와 허용 범위 안에서 일치 | 2026-09-11 통과(경량화 이전 구성). 경량화 뒤 다시 돌린다 |
+| 고정 불가 | `competitor-review-crawler` | 2단계에서 멈추고 STATUS 에 종료, Agent SDK 트랙 안내. 3단계 이후 파일 없음 | 크롤링 URL 미정. 게이트 테스트로만 |
 
-- `rfq-quote-generator`: RFQ 이메일 PDF + 도면 PDF → 공정 판정·원가·견적 xlsx·한중영 회신
-  초안. Step 0~7 이 순차 고정, 의존은 openpyxl 뿐, PDF 독해는 모델의 Vision. 스킬 4개.
-  샘플 입력은 `input/NovaDrive/` 한 건이라 **두 건을 합성** 한다(다른 부품, 치수가 빠진
-  도면 같은 예외). 합성이라고 `runs/inputs/README.md` 에 적는다
-- `competitor-review-crawler`: 도메인마다 모델이 런타임에 DOM 셀렉터를 새로 매핑하고 sanity
-  check 결과로 경로가 갈린다. captcha 면 브라우저 핸드오프. 우하단의 전형. 2단계에서 멈추는
-  경로라 3회 관찰만 하면 된다
-- 걸러진 후보: `exam-score-aggregator` 는 고정 가능이지만 `@oai/artifact-tool` 이 Codex
-  런타임 전용이라 Claude Code 에서 그대로 못 돌린다. `email-issue-brief` 는 입력이 Gmail
-  커넥터라 3종 재현이 어렵다. `instagram-monitor` 는 불가가 아니라 조건부(수집·필터·렌더는
-  스크립트 고정, 분석 문장만 모델)
+dogfood 산출물은 이 저장소에 두지 않는다(2026-09-14, `examples/` 삭제). 시행착오와 결과 요약은 LLM-Wiki
+`raw/practice/YYYY-MM-DD_주제.md` 로 쓰고 `/wiki-ingest` 로 컴파일한다. 위키에 직접 쓰지 않는다. 학습자에게 보여줄
+완성 예시가 필요해지면 그때의 dogfood 산출물을 별도로 공개한다.
 
-`.demo-projects` 에서 가져올 때는 사본이다. 원본은 두고 `.git` 없이 복사한다. `examples/`
-안의 `<이름>-app/` 은 `docs/` 만 두고 `.git` 을 만들지 않는다(중첩 저장소 금지). dogfood
-산출물은 커밋해서 학습자가 보는 완성 예시로 쓴다.
-
-dogfood 는 `examples/` 안에서 돌리지 않는다(2026-09-11 구현 중 발견). 그 안에서는 이 저장소 CLAUDE.md("기획서를
-먼저 읽어라")와 WorkOS CLAUDE.md 가 관찰 세션에 함께 로드돼 에이전트 행동이 바뀐다. 저장소 밖(세션 스크래치 등)에
-대상 사본과 `-app` 폴더를 만들어 돌리고, 끝나면 `-app/docs/agent-to-webapp/` 만 `examples/` 로 옮긴다. 스킬은
-유저 스코프 설치본을 쓴다. 학습자 PC 에서도 같은 문제가 생길 수 있어 1단계가 상위 폴더 CLAUDE.md 를 경고한다.
-
-실습 시행착오는 `LLM-Wiki/raw/practice/YYYY-MM-DD_주제.md` 로 먼저 쓰고 `/wiki-ingest` 로
-컴파일한다. 위키에 직접 쓰지 않는다.
+후보 선정 근거(2026-09-11 조사): `rfq-quote-generator` 는 Step 0~7 순차 고정, 의존 openpyxl 뿐, PDF 독해는 모델 Vision,
+스킬 4개. `competitor-review-crawler` 는 도메인마다 모델이 런타임에 DOM 셀렉터를 새로 매핑하고 sanity check 로 경로가
+갈리는 우하단의 전형. 걸러진 후보: `exam-score-aggregator`(Codex 전용 도구), `email-issue-brief`(Gmail 입력 재현 어려움),
+`instagram-monitor`(불가가 아니라 조건부).
 
 ## 11. 범위 밖
 
@@ -507,6 +495,8 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
 
 ## 13. 다음 세션 착수 순서
 
+(2026-09-11 당시 순서. 완료했고 이력으로 둔다. `examples/` 는 2026-09-14 에 지웠다.)
+
 1. 이 문서를 읽는다. §2 가 결정의 정본이다
 2. `superpowers:writing-plans` 로 구현 계획을 `docs/superpowers/plans/` 에 쓴다
 3. 구현 순서 제안: `references/`(prompts·decision-axes·phase-1~5) → `SKILL.md` →
@@ -528,9 +518,7 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   테스트(2단계 고정 불가 → 종료·라우팅 안내·이후 단계 거부)로만 검증됐다
 - 헤드리스 dogfood 에서는 예외 입력에서 에이전트가 사람에게 묻지 못하고 가정값으로 채웠다. 학습자의 대화형
   관찰에서는 멈추고 물을 수 있어 판정 분기가 다를 수 있다
-- `examples/rfq-quote-generator-app/` 의 `verify/` 와 `workflow.md` 는 경량화(§2-21) 이전 구성이다(자체 러너, 스키마
-  전부 JSON). 게이트는 여전히 통과한다. 다음 dogfood 때 템플릿 구성으로 다시 만든다. `runs/run-N.tools.md` 색인만
-  옛 jsonl 에서 새로 만들어 두었다
+- 경량화(§2-21) 뒤 고정 가능 경로 dogfood 를 다시 돌리지 않았다. 템플릿 구성의 verify/ 로 1~5단계를 끝까지 밟은 실측이 아직 없다
 
 구현 중 닫힘(2026-09-11):
 
@@ -551,5 +539,7 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   고정 불가 경로(competitor-review-crawler)는 URL 을 정하기 전이라 돌리지 않았다
 - 2026-09-14 사용자 결정: workflow.md 첫 절에 Mermaid 흐름도, 게이트가 단계와 대조(§2-20). rfq 예제 workflow.md 에도
   흐름도를 넣었다(dogfood 뒤 추가)
+- 2026-09-14 사용자 결정: 저장소 정리. `examples/` 삭제(dogfood 산출물은 저장소 밖, §10), 계획서를 `plans/archive/` 로,
+  배포 체크리스트를 브리프 틀 7절로 흡수, 루트 README 추가
 - 2026-09-14 사용자 결정: 경량화(§2-21). dogfood 산출물 크기를 재어 비용의 원인이 훅 기록·러너 재작성·스키마 되풀이·
   보고서 서술임을 확인하고 다섯 가지를 고쳤다. 단계·관찰 3회·서브에이전트·게이트는 유지

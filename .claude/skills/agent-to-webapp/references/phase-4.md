@@ -73,7 +73,8 @@ report 절 이름(`## 모델`, `## 입력 N`, `## 재검증 중 고친 것`, `##
   ## 재검증 중 고친 것   (단계 코드를 고쳤으면 무엇이 왜 실패했고 무엇을 고쳤는지. workflow.md 의 그 단계도 같이 고칠 것. 없으면 - 없음)
   ## 사람이 봤어야 할 것   (summary.json 의 human_notes 와, 사람이 봤다면 잡았을 것. 없으면 - 없음)
   ## 외부 서비스로 뺄 단계  (없으면 - 없음)
-  단계별 시간과 LLM 호출 수는 summary.json 의 timings·usage 에서 옮긴다. workflow.md 에 없는 검증(selftest 등)을 새로 만들지 않는다
+  단계별 시간과 LLM 호출 수는 summary.json 의 timings·usage 에서 옮긴다. workflow.md 에 없는 검증(selftest 등)을 새로 만들지 않는다.
+  실패한 시도의 out/ 폴더나 고치기 전 코드 사본을 남기지 않는다. 러너가 out/<입력>/ 을 덮어쓰고 summary.json 의 control·attention 이 기록이다
 ```
 
 위키 원문과 다른 점: Node 24 직접 실행, 러너·라이브러리는 템플릿, 단계 계약, 모델 지정, 사람 단계 처리, child_process 금지,

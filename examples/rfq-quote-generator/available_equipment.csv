@@ -1,4 +1,0 @@
-﻿equipment_id,route_name,display_name,max_load_kg,depth_min_mm,depth_max_mm,distortion_risk,hourly_rate_cny,setup_fee_cny,temper_fee_cny,cycle_formula_hr,preferred_when,avoid_when
-VCQ-1200,vacuum_carburizing,Vacuum carburizing + 10 bar gas quench,180,0.35,0.80,Low,320,450,80,2.5 + 4.0 * case_depth_mid + 0.8,"tight distortion, no post-grind, automotive parts",very shallow case under 0.30 mm
-GC-900,gas_carburizing,Gas carburizing + oil quench,300,0.40,1.20,Medium,250,380,90,3.0 + 5.0 * case_depth_mid + 0.8,cost priority with moderate distortion tolerance,distortion <= 0.03 mm and no post-grind
-GN-600,gas_nitriding,Gas nitriding,220,0.15,0.40,Low,220,300,0,10.0 + 18.0 * case_depth_mid,very tight distortion and shallow case,case depth upper limit > 0.40 mm or carburizing steel spec clearly preferred

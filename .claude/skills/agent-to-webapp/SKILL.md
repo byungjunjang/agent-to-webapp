@@ -51,7 +51,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 
 각 단계는 그 단계의 `references/phase-N.md` 를 읽고 그대로 한다. 프롬프트는 그 문서 안에 있다.
 2×2 표와 결정 축은 `references/decision-axes.md`, 브리프 틀은 `references/port-brief-template.md`,
-배포 뒤는 `references/deploy-checklist.md`.
+배포 뒤 확인은 브리프 7절의 체크리스트다.
 
 ## 게이트 규칙
 

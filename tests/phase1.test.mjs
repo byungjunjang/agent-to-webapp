@@ -121,3 +121,15 @@ test('buildToolIndex: 절대 경로의 공통 뿌리를 떼어 대상을 짧게 
   assert.ok(md.includes('| 2 | 08:00:01 | Write | sub/b.md |'), md);
   assert.ok(md.includes('| 3 | 08:00:02 | Bash | cd "." && ls ../proj-app |'), md);
 });
+
+test('phase1: 짝짓기 뒤 runs/tools/ 가 비면 지우고, 남은 파일이 있으면 둔다', () => {
+  const app = goodApp();
+  write(app, `${A2W}/runs/tools/s.jsonl`, `${REC('2026-09-11T01:00:00.000Z', 'Read', { file_path: 'x.md' })}\n`);
+  checkPhase1(join(app, A2W));
+  assert.ok(!existsSync(join(app, A2W, 'runs/tools')), '빈 tools/ 는 지운다');
+  const keep = goodApp();
+  write(keep, `${A2W}/runs/tools/s.jsonl`, `${REC('2026-09-11T01:00:00.000Z', 'Read', { file_path: 'x.md' })}\n`);
+  write(keep, `${A2W}/runs/tools/note.txt`, '사람이 둔 파일');
+  checkPhase1(join(keep, A2W));
+  assert.ok(existsSync(join(keep, A2W, 'runs/tools/note.txt')));
+});

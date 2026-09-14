@@ -13,7 +13,7 @@ export const MAX_INPUT = 1000;
 export const MAX_RESPONSE = 200;
 // 파일 도구의 내용(content·old_string·new_string)과 Agent 의 prompt 는 버리고 이 키만 남긴다.
 export const INPUT_KEYS = ['file_path', 'notebook_path', 'path', 'pattern', 'glob', 'command', 'skill', 'args', 'description', 'subagent_type', 'url'];
-// 기록은 작업 폴더 repo 와 examples/ 로 커밋된다. API 키 모양 문자열은 남기지 않는다.
+// 기록은 작업 폴더 repo 로 커밋된다. API 키 모양 문자열은 남기지 않는다.
 export const KEY_PATTERN = /sk-ant-[A-Za-z0-9_-]+/g;
 
 export function redact(s) {

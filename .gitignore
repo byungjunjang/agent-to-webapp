@@ -6,6 +6,3 @@ CLAUDE.local.md
 AGENTS.override.md
 .claude/settings.local.json
 .codex/hooks.json
-examples/*/output/
-examples/*/.venv/
-examples/*/__pycache__/

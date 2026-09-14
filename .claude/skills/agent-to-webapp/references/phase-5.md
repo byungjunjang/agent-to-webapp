@@ -50,4 +50,4 @@ docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽�
 - 화면은 입력 → 진행 상태 → 결과 셋이면 충분
 ```
 
-바이브 코딩은 이 스킬의 범위 밖이다. 배포 후에는 `references/deploy-checklist.md` 를 따른다.
+바이브 코딩은 이 스킬의 범위 밖이다. 배포 후 확인은 브리프 7절의 체크리스트를 따른다.
