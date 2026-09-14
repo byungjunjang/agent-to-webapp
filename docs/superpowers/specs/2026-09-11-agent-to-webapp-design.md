@@ -46,17 +46,18 @@ Vercel 에 바이브 코딩)가 실습에서 가장 자주 실패하는 케이�
 | 7 | 게이트 | `scripts/check_phase.mjs` 가 단계마다 종료코드로 답한다. **STATUS 는 스크립트가 통과 시 직접 쓴다.** 2·3단계는 사람 승인을 STATUS 에 기록해야 통과(`--batch` 면 생략). 2단계는 배정표에 4번째 칸 항목이 있으면 `고정 가능` 을 거부한다. 사람이 판정을 뒤집을 수 있고 사유를 STATUS 에 남긴다 | 검증 없이 완료 선언 금지. 모델이 통과를 선언만 하고 넘어가는 경로를 막는다 |
 | 8 | 웹 앱 위치 | 작업 폴더가 곧 웹 앱 repo. `../<이름>-app/`, 자체 repo. 스킬이 시작 때 `git init` 한다. 5단계 스캐폴드는 `docs/` 까지만 | 중첩 저장소 금지, Vercel Root Directory, 클라우드 에이전트의 통째 clone. 선례 `litigation-writer-app`. 형제가 둘이면 충분하다 |
 | 9 | 스택 | Next.js + Vercel. Supabase 는 조건부(§4-5). `--stack` 옵션은 없다 | 본인 기본값이 Next.js. 스타터 표기는 뜻이 불분명하고 브리프 항목과 충돌해 뺐다 |
-| 10 | 재검증 언어 | TypeScript, Node 24 에서 `node run.ts` 로 바로 실행되는 단독 스크립트(`tsx` 불필요), Anthropic SDK. 기본 모델 `claude-sonnet-5`, 환경변수로 변경. `child_process` 로 Python 을 부르지 않는다 | 웹 앱과 다른 언어로 검증하면 검증이 절반만 된다. Vercel 에서 안 도는 것을 로컬에서 되게 하면 검증이 아니다 |
-| 11 | 훅 기록 | Claude Code 대상은 PostToolUse 훅을 **기본 설치**(끌 수 있다). Codex 대상은 `.codex/hooks.json` 을 시도하고, 페이로드가 다르면 자기 보고만으로 후퇴한다 | 판정 서브에이전트가 자기 보고를 실제 도구 호출과 대조하려면 훅 기록이 있어야 한다. 훅은 무엇을 했는지를, 자기 보고는 왜 그랬는지를 남긴다 |
+| 10 | 재검증 언어 | TypeScript, Node 24 에서 `node run.ts` 로 바로 실행되는 단독 스크립트(`tsx` 불필요), Anthropic SDK. 기본 모델 `claude-sonnet-5`, 환경변수로 변경. `child_process` 로 Python 을 부르지 않는다. **러너 `run.ts` 와 `lib/` 는 스킬 자산 `assets/verify-template` 에서 복사하고 LLM 은 `steps/` 만 쓴다**(2026-09-14, §2-21) | 웹 앱과 다른 언어로 검증하면 검증이 절반만 된다. Vercel 에서 안 도는 것을 로컬에서 되게 하면 검증이 아니다 |
+| 11 | 훅 기록 | Claude Code 대상은 PostToolUse 훅을 **기본 설치**(끌 수 있다). Codex 대상은 `.codex/hooks.json` 을 시도하고, 페이로드가 다르면 자기 보고만으로 후퇴한다. 훅은 파일 경로·명령과 응답 첫 200자만 남기고, 1단계 게이트가 `run-N.tools.md` 색인(순번·시각·도구·대상·공백)을 만든다(2026-09-14) | 판정 서브에이전트가 자기 보고를 실제 도구 호출과 대조하려면 훅 기록이 있어야 한다. 훅은 무엇을 했는지를, 자기 보고는 왜 그랬는지를 남긴다. dogfood 에서 응답이 기록 340KB 의 3분의 2였지만 판정은 순번·시각·도구·경로만 썼다 |
 | 12 | 원격 | `--batch` 면 질문 없이 진행. 사람 승인 게이트도 생략 | 원격 채널에서는 질문하지 않는다 |
 | 13 | 고정 불가 | 2단계에서 종료. Agent SDK + 별도 서버 트랙으로 라우팅 안내만 한다 | 우하단 칸은 이 스킬의 대상이 아니다 |
 | 14 | 도착지 판정 | 정식 라우팅 단계는 두지 않는다. 시작 때 한 줄 확인("웹 앱이 도착지인가, 플러그인·cron·Slack 봇이 아닌가")만 | 웹 앱을 유일한 도착지로 두면 로컬 에이전트로 충분한 일까지 앱으로 만들게 된다. 그러나 이 스킬은 웹 앱이 도착지로 정해진 뒤에 부르는 것이다 |
 | 15 | 대상 런타임 | **Claude Code 와 Codex 둘 다** 대상이다. 표식은 `CLAUDE.md`·`.claude/skills/` 와 `AGENTS.md`·`.agents/skills/`. 둘 다 있으면 묻는다. 스킬 자체는 Claude Code 에서만 실행한다 | 위키가 로컬 에이전트를 Claude Code·Codex 로 정의하고, 데모 풀의 상당수가 Codex 기반이다. 판정 서브에이전트와 사람 승인 질문이 Claude Code 도구에 묶여 있다 |
 | 16 | 사용자·시간 | 학습자 기준. 1~2단계 수업 중, 3~5단계 과제 | §1 |
-| 17 | 프롬프트 정본 | 실행판은 `references/prompts.md`. 위키는 원문과 개념을 보존하고 "실행판은 agent-to-webapp 스킬" 한 줄을 단다 | 실행판은 경로·고정 헤딩·JSON 필수·4번째 칸 규칙이 원문과 다르다. 바뀔 때마다 위키를 고치면 위키가 스킬 매뉴얼이 된다 |
+| 17 | 프롬프트 정본 | 실행판은 각 `references/phase-N.md` 안의 "프롬프트 N" 절(2026-09-14 까지는 `prompts.md` 한 파일). 위키는 원문과 개념을 보존하고 "실행판은 agent-to-webapp 스킬" 한 줄을 단다 | 실행판은 경로·고정 헤딩·JSON 필수·4번째 칸 규칙이 원문과 다르다. 바뀔 때마다 위키를 고치면 위키가 스킬 매뉴얼이 된다. 한 파일에 두면 단계마다 다섯 프롬프트를 다 읽는다 |
 | 18 | API 키 | 사용자별 키를 스킬 폴더의 `.env` 에 둔다. 한 번 만들면 모든 프로젝트의 4단계가 다시 쓰고, 한 프로젝트만 다를 때 `verify/.env` 가 덮는다. `.env` 는 git 에 올리지 않는다(저장소와 스킬 폴더의 `.gitignore`, 테스트로 강제). 설치 스크립트는 설치된 쪽 `.env` 를 지우지 않는다. 스킬은 키를 읽지 않고 `check_phase.mjs key` 가 출처만 답한다. 훅 기록은 키 모양 문자열을 가린다 | 학습자가 프로젝트마다 키를 만들 필요가 없다. 셸 환경변수로 두면 Claude Code 가 구독 대신 그 키로 과금한다(Anthropic 지원 문서) |
 | 19 | 4단계 검증 수단 | 코드가 순서를 정하고 Anthropic API 를 부르는 스크립트로만 한다. 에이전트가 workflow.md 를 따라 하거나 `claude -p` 로 대체하지 않는다 | 에이전트는 빈틈을 판단으로 메워 통과한다(dogfood 2회차의 견적서 수기 보정). API 스크립트만 순서, 스키마 연결, 단계 단독 동작, 실제 소요 시간을 보여 주고, 그 함수가 웹 앱으로 복사된다 |
 | 20 | workflow.md 흐름도 | 첫 절 `## 흐름도` 에 Mermaid `flowchart TD` 하나. 노드 id `S<단계 번호>`, 모양·class 는 실행 주체(코드 사각·`code`, LLM 알약·`llm`, 사람 육각·`human`, 입력·끝점 회색·`term`), 분기·되돌아가기는 라벨 화살표, 멈추는 실패는 점선. 3단계 게이트가 노드와 `### 단계 N`, class 와 실행 주체를 대조해 어긋나면 실패 | 명세가 길어(rfq 예제 510줄) 순서·재시도·사람 확인 지점이 한눈에 안 보인다. 학습자가 승인 때 읽는 문서라 첫 화면에 둔다. Mermaid 는 GitHub·Obsidian 이 그리고 diff 가 된다. 대조가 없으면 단계를 고친 뒤 그림이 옛것으로 남는다 |
+| 21 | 경량화 | (a) 4단계 러너·라이브러리를 `assets/verify-template` 로 고정하고 `--from N` 이어 돌리기. 게이트는 템플릿과 다르면 경고 (b) 훅 기록은 경로·명령·응답 200자, 1단계 게이트가 `run-N.tools.md` 색인 생성, 2단계는 색인을 읽는다 (c) workflow.md 스키마는 `단계 N 출력과 같음` / `공통 스키마 이름` / `입력과 같음` 참조 허용, 게이트가 참조를 끝까지 따라가 검사 (d) report 의 입력 절은 차이 표 하나, verdict 는 표 위주 한 줄 근거 (e) 프롬프트를 단계 문서로 흡수 | dogfood 실측: 2단계 입력 400KB 중 훅 기록 340KB, workflow 544줄 중 JSON 257줄, 러너 19KB 를 매번 새로 씀, API 28회 중 최종 13회, report 20KB. 단계 수·관찰 3회·서브에이전트·게이트는 그대로 둔다 — 그것들은 비용의 원인이 아니었다 |
 
 ## 3. 용어
 
@@ -213,11 +214,15 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
       runs/
         inputs/                    실행 3회의 입력 (쉬움·보통·예외) + README.md (왜 그 셋인지)
         run-1.md                   자기 보고 (프롬프트 1, 헤딩 고정)
-        run-1.tools.jsonl          PostToolUse 훅 기록
+        run-1.tools.jsonl          PostToolUse 훅 기록 (경로·명령·응답 200자)
+        run-1.tools.md             1단계 게이트가 만든 색인. 2단계가 읽는다. 파생 파일
       verdict.md                   2×2 배정표 + 판정 (프롬프트 2)
       workflow.md                  고정 워크플로우 명세 (프롬프트 3)
       verify/                      TypeScript 단독 스크립트 (프롬프트 4)
-        package.json  .gitignore  run.ts  steps/  report.md
+        run.ts  lib/step.ts  lib/llm.ts  package.json  .gitignore   ← 스킬 assets/verify-template 에서 복사. 고치지 않는다
+        steps/index.ts  steps/<nn>-<이름>.ts                          ← LLM 이 쓴다 (단계 배열 + 단계당 함수 하나)
+        out/<입력>/NN-이름.json  summary.json                         ← 실행이 쓴다
+        report.md
       port-brief.md                웹 앱 전환 브리프 (5단계)
     (5단계 뒤 새 세션이 create-next-app 으로 채운다. src/lib/workflow/ ← verify/steps/)
 ```
@@ -234,8 +239,7 @@ workos/agent-to-webapp/
     .env.example                         사용자별 API 키 틀. 같은 폴더에 .env 로 복사해 채운다
     .gitignore                           .env 를 가린다
     references/
-      phase-1.md ~ phase-5.md            단계별 세부. 해당 단계에서만 읽는다
-      prompts.md                         §7 실행판 프롬프트 (정본)
+      phase-1.md ~ phase-5.md            단계별 세부 + 그 단계의 프롬프트 실행판(정본). 해당 단계에서만 읽는다
       decision-axes.md                   §8 표 넷
       port-brief-template.md             5단계 브리프 틀 (선택 절: 스타일 지정)
       deploy-checklist.md                배포 확인
@@ -246,6 +250,7 @@ workos/agent-to-webapp/
     assets/
       hooks.claude.example.json          settings.local.json 에 합칠 훅 + additionalDirectories
       hooks.codex.example.json           .codex/hooks.json 예시
+      verify-template/                   4단계 러너 run.ts, lib/step.ts(단계 계약), lib/llm.ts, package.json, .gitignore. verify/ 로 복사된다
   examples/                              스킬 검증용 데모 에이전트 (§10)
 ```
 
@@ -256,7 +261,7 @@ Python 은 대개 없다. 스크립트는 파일을 LF·UTF-8 로 쓴다 — LLM
 ## 7. 프롬프트
 
 원문은 위키 페이지에 있다. 원출처는 2026-09-07 claude.ai 대화
-(`LLM-Wiki/raw/conversations/2026-09-07_Local-Agent-To-Web-App.md`). 아래는 실행판이고
+(`LLM-Wiki/raw/conversations/2026-09-07_Local-Agent-To-Web-App.md`). 아래는 기획 당시 실행판 초안이고
 원문과 다른 점을 각 프롬프트 뒤에 적는다. 5 는 이 문서에서 처음 쓰는 초안이다.
 
 ### 7-1. 매 실행마다 기록 남기기
@@ -329,7 +334,7 @@ LLM 단계로 둘지 사람 확인 지점으로 둘지 정해서 적어줘. 순�
 ```
 
 원문과 다른 점: 조건 첫머리, JSON 필수, 규칙화 불가 항목의 재배치 요구. 2026-09-14 부터 첫 절에 흐름도를
-두고 조건은 그 다음이다(§2-20). 실행판 문구는 `references/prompts.md`.
+두고 조건은 그 다음이다(§2-20). 실행판 문구는 `references/phase-3.md` 의 프롬프트 3.
 
 ### 7-4. 스크립트 작성
 
@@ -521,6 +526,9 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   테스트(2단계 고정 불가 → 종료·라우팅 안내·이후 단계 거부)로만 검증됐다
 - 헤드리스 dogfood 에서는 예외 입력에서 에이전트가 사람에게 묻지 못하고 가정값으로 채웠다. 학습자의 대화형
   관찰에서는 멈추고 물을 수 있어 판정 분기가 다를 수 있다
+- `examples/rfq-quote-generator-app/` 의 `verify/` 와 `workflow.md` 는 경량화(§2-21) 이전 구성이다(자체 러너, 스키마
+  전부 JSON). 게이트는 여전히 통과한다. 다음 dogfood 때 템플릿 구성으로 다시 만든다. `runs/run-N.tools.md` 색인만
+  옛 jsonl 에서 새로 만들어 두었다
 
 구현 중 닫힘(2026-09-11):
 
@@ -541,3 +549,5 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   고정 불가 경로(competitor-review-crawler)는 URL 을 정하기 전이라 돌리지 않았다
 - 2026-09-14 사용자 결정: workflow.md 첫 절에 Mermaid 흐름도, 게이트가 단계와 대조(§2-20). rfq 예제 workflow.md 에도
   흐름도를 넣었다(dogfood 뒤 추가)
+- 2026-09-14 사용자 결정: 경량화(§2-21). dogfood 산출물 크기를 재어 비용의 원인이 훅 기록·러너 재작성·스키마 되풀이·
+  보고서 서술임을 확인하고 다섯 가지를 고쳤다. 단계·관찰 3회·서브에이전트·게이트는 유지

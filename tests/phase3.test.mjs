@@ -40,7 +40,7 @@ function app(text) {
 test('parseWorkflow: 단계·필드·규칙화 불가 항목', () => {
   const w = parseWorkflow(GOOD);
   assert.equal(w.steps.length, 2);
-  assert.deepEqual(w.steps[0], { n: 1, name: '스펙 추출', actor: 'LLM', hasInputSchema: true, hasOutputSchema: true, failure: '2회 재시도 후 사람 확인' });
+  assert.deepEqual(w.steps[0], { n: 1, name: '스펙 추출', actor: 'LLM', schemaIn: { json: true, ref: null }, schemaOut: { json: true, ref: null }, failure: '2회 재시도 후 사람 확인' });
   assert.equal(w.steps[1].actor, '코드');
   assert.deepEqual(w.unruled, ['없음']);
   assert.equal(w.hasUnruledSection, true);
@@ -117,4 +117,35 @@ test('phase3: 규칙화 불가 절이 없으면 경고, 단계가 없으면 실�
   assert.equal(r.ok, true);
   assert.ok(r.warnings.some(w => w.includes('규칙화 불가')));
   assert.equal(checkPhase3(app('# 빈 문서\n')).ok, false);
+});
+
+// 경량화: 단계 N 의 출력은 대개 단계 N+1 의 입력이다. JSON 을 되풀이하지 않고 참조로 쓴다.
+const REF_STEP = (n, name, inLine, outLine, actor = '코드') => `### 단계 ${n}: ${name}
+- 실행 주체: ${actor}
+- 입력 스키마: ${inLine}
+- 출력 스키마: ${outLine}
+- 규칙: 그대로
+- 실패 처리: 중단
+`;
+const COMMON = '## 공통 스키마\n### Specs\n```json\n{ "material": "string" }\n```\n';
+const DIAGRAM3 = DIAGRAM('S1(["1 a"]) --> S2["2 b"] --> S3{{"3 c"}}', 'class S1 llm', 'class S2 code', 'class S3 human');
+
+test('phase3: 입력 스키마가 앞 단계 출력·공통 스키마·입력과 같음 참조면 통과', () => {
+  const text = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n`;
+  const r = checkPhase3(app(text));
+  assert.deepEqual(r.errors, []);
+  const w = parseWorkflow(text);
+  assert.deepEqual(w.steps[1].schemaIn, { json: false, ref: { step: 1 } });
+  assert.deepEqual(w.steps[1].schemaOut, { json: false, ref: { common: 'Specs' } });
+  assert.deepEqual(w.steps[2].schemaOut, { json: false, ref: { same: true } });
+  assert.deepEqual(w.steps[0].schemaIn, { json: true, ref: null });
+});
+
+test('phase3: 참조가 없는 단계·없는 공통 스키마·순환을 가리키면 실패', () => {
+  const noStep = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 9 출력과 같음', '공통 스키마 Specs')}${STEP(3, 'c', '사람')}## 규칙화 불가\n- 없음\n`;
+  assert.ok(checkPhase3(app(noStep)).errors.some(e => e.includes('단계 2') && e.includes('단계 9')));
+  const noCommon = `${DIAGRAM3}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${STEP(3, 'c', '사람')}## 규칙화 불가\n- 없음\n`;
+  assert.ok(checkPhase3(app(noCommon)).errors.some(e => e.includes('단계 2') && e.includes('공통 스키마') && e.includes('Specs')));
+  const cycle = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 3 출력과 같음', '입력과 같음')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n`;
+  assert.ok(checkPhase3(app(cycle)).errors.some(e => e.includes('순환')));
 });

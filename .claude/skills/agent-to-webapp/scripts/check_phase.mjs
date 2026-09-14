@@ -40,7 +40,7 @@ const CHECKS = {
   1: (d) => checkPhase1(d),
   2: (d, o) => checkPhase2(d, o),
   3: (d) => checkPhase3(d),
-  4: (d) => checkPhase4(d),
+  4: (d) => checkPhase4(d, { skillDir: SKILL_DIR }),
   5: (d) => checkPhase5(d),
 };
 
@@ -118,6 +118,7 @@ function gate(cwd, n, flags, out, err) {
   const override = typeof flags.override === 'string' ? flags.override : null;
   const r = CHECKS[n](a2wDir, { override });
   for (const w of r.warnings) out(`경고: ${w}`);
+  for (const m of r.notes ?? []) out(m);
   if (!r.ok) {
     for (const e of r.errors) err(`실패: ${e}`);
     if (n === 3 && r.rejudge) err('규칙화 불가 항목이 순서를 흔든다. 2단계로 돌아가라: node check_phase.mjs rollback 2');

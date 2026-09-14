@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, rmSync } from 'node:fs';
 import { makeApp, write, A2W } from './helpers.mjs';
 import { checkPhase4 } from '../.claude/skills/agent-to-webapp/scripts/lib/phase4.mjs';
 
@@ -26,7 +26,7 @@ function verifyApp(report = REPORT, { steps = true } = {}) {
   write(a, `${v}/run.ts`, 'export {};');
   write(a, `${v}/package.json`, '{"name":"verify","type":"module"}');
   write(a, `${v}/.gitignore`, 'node_modules\n.env\n');
-  if (steps) write(a, `${v}/steps/step1.ts`, 'export const step1 = () => {};');
+  if (steps) { write(a, `${v}/steps/index.ts`, 'export const steps = [];'); write(a, `${v}/steps/step1.ts`, 'export const step1 = () => {};'); }
   write(a, `${v}/report.md`, report);
   return join(a, A2W);
 }
@@ -83,4 +83,39 @@ test('phase4: 재검증 중 고친 것이 있으면 workflow.md 반영을 경고
 
 test('phase4: verify 폴더 없으면 실패', () => {
   assert.equal(checkPhase4(join(makeApp(), A2W)).ok, false);
+});
+
+// 경량화: 러너와 라이브러리는 스킬 자산이다. LLM 이 쓰는 것은 steps/ 뿐이고, 러너를 고쳤으면 경고한다.
+test('phase4: steps/index.ts 가 없으면 실패', () => {
+  const d = verifyApp();
+  rmSync(join(d, 'verify', 'steps', 'index.ts'));
+  const r = checkPhase4(d);
+  assert.ok(r.errors.some(e => e.includes('steps/index.ts')));
+});
+
+test('phase4: index.ts 만 있고 단계 파일이 없으면 실패', () => {
+  const d = verifyApp(REPORT, { steps: false });
+  write(d, 'verify/steps/index.ts', 'export const steps = [];');
+  assert.ok(checkPhase4(d).errors.some(e => e.includes('steps/') && e.includes('단계')));
+});
+
+test('phase4: run.ts·lib 가 템플릿과 다르면 경고, 같으면 조용', () => {
+  const skill = makeApp('a2w-skill-');
+  write(skill, 'assets/verify-template/run.ts', 'export {};\n');
+  write(skill, 'assets/verify-template/lib/step.ts', 'export const x = 1;\n');
+  const same = verifyApp();
+  write(same, 'verify/lib/step.ts', 'export const x = 1;\r\n');
+  assert.ok(!checkPhase4(same, { skillDir: skill }).warnings.some(w => w.includes('템플릿')));
+  const changed = verifyApp();
+  write(changed, 'verify/run.ts', 'export const hacked = 1;');
+  const r = checkPhase4(changed, { skillDir: skill });
+  assert.equal(r.ok, true);
+  assert.ok(r.warnings.some(w => w.includes('run.ts') && w.includes('템플릿')));
+});
+
+test('phase4: 입력 절에 차이 표가 없으면 경고', () => {
+  const r = checkPhase4(verifyApp());
+  assert.ok(r.warnings.some(w => w.includes('입력 1') && w.includes('차이 표')));
+  const withTable = REPORT.replace('차이 없음', '| 항목 | 로컬 | 스크립트 | 판정 |\n|---|---|---|---|\n| 단가 | 1 | 1 | 일치 |');
+  assert.ok(!checkPhase4(verifyApp(withTable)).warnings.some(w => w.includes('입력 1') && w.includes('차이 표')));
 });

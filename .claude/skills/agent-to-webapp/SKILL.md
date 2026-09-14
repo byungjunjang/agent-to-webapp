@@ -49,7 +49,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 | 4 재검증 | references/phase-4.md | verify/, verify/report.md | `check_phase.mjs 4` | 차이 허용 여부는 학습자 |
 | 5 전환 | references/phase-5.md | port-brief.md | `check_phase.mjs 5` | 새 세션 안내 뒤 종료 |
 
-각 단계는 그 단계의 `references/phase-N.md` 를 읽고 그대로 한다. 프롬프트 원문은 `references/prompts.md`,
+각 단계는 그 단계의 `references/phase-N.md` 를 읽고 그대로 한다. 프롬프트는 그 문서 안에 있다.
 2×2 표와 결정 축은 `references/decision-axes.md`, 브리프 틀은 `references/port-brief-template.md`,
 배포 뒤는 `references/deploy-checklist.md`.
 

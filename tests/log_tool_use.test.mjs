@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { makeApp } from './helpers.mjs';
-import { toRecord, truncate, appendRecord, MAX_FIELD } from '../.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs';
+import { toRecord, truncate, appendRecord, compactInput, MAX_FIELD, MAX_INPUT, MAX_RESPONSE } from '../.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs';
 
 const SCRIPT = resolve('.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs');
 const CLAUDE_PAYLOAD = {
@@ -56,4 +56,35 @@ test('CLI: stdin JSON → 파일, 깨진 JSON 도 0, 인자 없으면 2', () => 
   assert.equal(bad.status, 0);
   assert.ok(readFileSync(join(dir, 'unknown.jsonl'), 'utf8').includes('parse_error'));
   assert.equal(spawnSync(process.execPath, [SCRIPT], { input: '{}', encoding: 'utf8' }).status, 2);
+});
+
+// 경량화: 판정에 쓰이는 것은 "무엇을 어디에 했는가" 뿐이다. 파일 내용과 긴 응답은 남기지 않는다.
+test('toRecord: 파일 도구는 경로만 남기고 내용은 버린다', () => {
+  const rec = toRecord({
+    session_id: 's', tool_name: 'Write',
+    tool_input: { file_path: 'C:/x/run-1.md', content: 'x'.repeat(5000) },
+    tool_response: { ok: true },
+  });
+  assert.equal(rec.input, '{"file_path":"C:/x/run-1.md"}');
+  const edit = toRecord({ session_id: 's', tool_name: 'Edit', tool_input: { file_path: 'a.md', old_string: 'o', new_string: 'n' } });
+  assert.equal(edit.input, '{"file_path":"a.md"}');
+});
+
+test('toRecord: response 는 MAX_RESPONSE 자에서 자른다', () => {
+  const rec = toRecord({ ...CLAUDE_PAYLOAD, tool_response: { stdout: 'y'.repeat(5000) } });
+  assert.ok(rec.response.length <= MAX_RESPONSE + 20, `${rec.response.length}자`);
+  assert.match(rec.response, /…\(\+\d+\)$/);
+  assert.ok(MAX_RESPONSE < MAX_FIELD);
+});
+
+test('toRecord: 명령은 MAX_INPUT 자까지만', () => {
+  const rec = toRecord({ ...CLAUDE_PAYLOAD, tool_input: { command: 'z'.repeat(5000), description: 'd' } });
+  assert.ok(rec.input.length <= MAX_INPUT + 20, `${rec.input.length}자`);
+  assert.ok(rec.input.startsWith('{"command":"zzz'));
+});
+
+test('compactInput: 아는 키가 없으면 그대로, 객체가 아니면 그대로', () => {
+  assert.deepEqual(compactInput({ foo: 1, bar: 'b' }), { foo: 1, bar: 'b' });
+  assert.equal(compactInput('str'), 'str');
+  assert.deepEqual(compactInput({ skill: 'x', args: 'y', prompt: 'p'.repeat(100) }), { skill: 'x', args: 'y' });
 });

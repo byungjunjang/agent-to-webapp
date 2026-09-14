@@ -8,8 +8,11 @@
 - 스킬 정본은 `.claude/skills/agent-to-webapp/`. 유저 스코프(`~/.claude/skills/agent-to-webapp/`)에는
   아래 "스킬을 고친 뒤 다시 설치하기" 대로 설치한다
 - 개념과 프롬프트 원문은 LLM-Wiki `wiki/vibe-coding/local-agent-to-web-app.md`. 실행판은
-  스킬의 `references/prompts.md` 가 정본이다(§2-17). 실행판이 원문에서 벗어나면 이유를
+  스킬의 `references/phase-N.md` 안 "프롬프트 N" 절이 정본이다(§2-17). 실행판이 원문에서 벗어나면 이유를
   `raw/practice/` 로 보내 위키에 되먹인다
+- 4단계 러너·라이브러리는 `assets/verify-template/` 이 정본이다. 재검증 중 러너를 고쳐야 했다면 그 수정은
+  여기로 돌아와야 한다(§2-21). 헤딩·필드 같은 형식 문자열은 `scripts/lib/phaseN.mjs` 상수와 같아야 하고
+  `tests/references.test.mjs` 가 확인한다
 - 남은 일: 고정 불가 경로 dogfood(계획 Task 16, 크롤링할 URL 3개 필요), LLM-Wiki `/wiki-ingest`
 
 ## 스킬을 고친 뒤 다시 설치하기
