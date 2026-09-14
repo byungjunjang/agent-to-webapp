@@ -4,6 +4,41 @@
 - 순서는 코드가 정한다. LLM 은 네 곳(스펙 추출, 누락 스펙, 판정 설명, 회신 이메일)에서만 부른다. 사람은 두 곳(견적 전제 확인, 발송 전 검토)에서 본다
 - 로컬의 실제 순서(입력 읽기 → 0 → 1 → 2 → 3 → 4 → 5 → 7 → 6 → 검증)를 따른다. 루트 판정 설명은 계산 뒤로 옮겼다. 트레이드오프 문장이 단가를 인용하기 때문이다
 
+## 흐름도
+
+사각 = 코드, 알약 = LLM, 육각 = 사람, 회색 = 입력·끝점. 실선 라벨은 분기·되돌아가기, 점선은 작업을 멈추는 실패다.
+
+```mermaid
+flowchart TD
+  IN("RFQ 메일 + 도면") --> S1["1 입력 접수"]
+  S1 -.->|"파일 구성 오류"| REJ("작업 안 만듦 · 빠진 파일 안내")
+  S1 --> S2(["2 스펙 추출"])
+  S2 --> S3["3 스펙 검증·모드 판정"]
+  S3 -->|"errors · 재추출 최대 2회"| S2
+  S3 -->|"provisional"| S4{{"4 견적 전제 확인"}}
+  S3 -->|"firm"| S5(["5 누락 스펙 식별"])
+  S4 --> S5
+  S5 --> S6["6 루트 판정·리드타임"]
+  S6 --> S7["7 원가·견적 계산"]
+  S7 --> S8(["8 판정 설명"])
+  S8 --> S9(["9 회신 이메일"])
+  S9 --> S10["10 견적서 xlsx 생성"]
+  S10 --> S11["11 최종 검증"]
+  S11 -->|"이메일 누락 · 1회"| S9
+  S11 -->|"ok"| S12{{"12 발송 전 검토"}}
+  S12 -->|"approved"| DONE("xlsx · 이메일 초안 내려받기")
+  S2 & S3 & S5 & S6 & S7 & S8 & S10 & S11 -.-> NA("needs_attention")
+  S12 -.->|"rejected"| NA
+  classDef code fill:#e8eef7,stroke:#4a6fa5,color:#1a1a1a
+  classDef llm fill:#f3e8f7,stroke:#8a4fa5,color:#1a1a1a
+  classDef human fill:#fdf1dc,stroke:#c08a2e,color:#1a1a1a
+  classDef term fill:#f4f4f4,stroke:#999999,color:#1a1a1a
+  class S1,S3,S6,S7,S10,S11 code
+  class S2,S5,S8,S9 llm
+  class S4,S12 human
+  class IN,REJ,DONE,NA term
+```
+
 ## 조건
 
 verdict.md 조건 ①–⑤ 를 아래처럼 반영했다. 하나라도 빠지면 이 명세는 고정 워크플로우가 아니다.

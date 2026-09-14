@@ -59,7 +59,21 @@
 
 ```
 <A2W>/verdict.md 를 바탕으로 <A2W>/workflow.md 에 고정된 워크플로우 명세를 작성해줘.
-조건부 판정이면 "## 조건" 절을 문서 첫머리에 두고 조건을 적어줘.
+문서의 첫 절은 "## 흐름도" 다. 조건부 판정이면 "## 조건" 절을 흐름도 바로 다음에 두고 조건을 적어줘.
+
+"## 흐름도" 에는 모양 범례 한 줄과, 전체 흐름이 한눈에 보이는 mermaid 코드 블록(flowchart TD) 하나를 넣어줘.
+- 노드 id 는 S<단계 번호>, 단계마다 하나. 입력·완료·needs_attention 같은 끝점은 S숫자가 아닌 id(IN, DONE, NA 등)를 쓴다
+- 모양은 실행 주체대로: 코드 S1["1 이름"], LLM S2(["2 이름"]), 사람 S3{{"3 이름"}}. 끝점은 NA("needs_attention").
+  라벨은 큰따옴표로 감싼다
+- 범례: "사각 = 코드, 알약 = LLM, 육각 = 사람, 회색 = 입력·끝점. 실선 라벨은 분기·되돌아가기, 점선은 작업을 멈추는 실패다."
+- 아래 classDef 네 줄을 그대로 쓰고, class 줄로 모든 단계 노드에 code / llm / human 을, 끝점에 term 을 붙인다
+  classDef code fill:#e8eef7,stroke:#4a6fa5,color:#1a1a1a
+  classDef llm fill:#f3e8f7,stroke:#8a4fa5,color:#1a1a1a
+  classDef human fill:#fdf1dc,stroke:#c08a2e,color:#1a1a1a
+  classDef term fill:#f4f4f4,stroke:#999999,color:#1a1a1a
+- 화살표는 단계 순서대로 잇는다. 분기와 실패 처리의 되돌아가기(재시도·재호출)는 -->|"라벨"| 로 적고,
+  작업을 멈추는 실패는 점선 -.-> 으로 끝점 하나에 모은다
+- 흐름도의 번호·이름·실행 주체·되돌아가는 곳은 아래 "## 단계" 와 같아야 한다
 
 "## 단계" 아래 각 단계를 "### 단계 N: 이름" 헤딩으로 쓰고, 단계마다 아래 줄을 이 순서로 넣어줘.
 - 실행 주체: 코드 | LLM | 사람 (셋 중 하나)
@@ -77,7 +91,7 @@
 사람이 확인해야 하는 지점이 있으면 실행 주체가 "사람" 인 단계로 넣어줘.
 ```
 
-원문과 다른 점: 조건 첫머리, 헤딩·필드 고정(`STEP_HEADING`, `FIELD_*`), JSON 필수, 규칙화 불가 항목의 재배치(`UNRULED_HEADING`, `UNRULED_TARGETS`, `UNRULED_REJUDGE`).
+원문과 다른 점: 첫 절 흐름도(`DIAGRAM_HEADING`. 노드 `S<번호>` 와 class 를 게이트가 단계 헤딩·실행 주체와 대조, `ACTOR_CLASS`), 조건은 흐름도 다음, 헤딩·필드 고정(`STEP_HEADING`, `FIELD_*`), JSON 필수, 규칙화 불가 항목의 재배치(`UNRULED_HEADING`, `UNRULED_TARGETS`, `UNRULED_REJUDGE`). 흐름도는 510줄짜리 명세(rfq 예제)에서 순서·재시도·사람 확인 지점이 한눈에 안 보여 넣었다.
 
 ## 프롬프트 4 — 재검증 스크립트
 
