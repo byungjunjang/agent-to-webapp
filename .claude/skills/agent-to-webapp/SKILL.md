@@ -46,7 +46,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 
 | 단계 | 읽을 문서 | 산출물 | 게이트 | 멈출 곳 |
 |---|---|---|---|---|
-| 1 관찰 | references/phase-1.md | runs/inputs/, runs/run-N.md | `check_phase.mjs 1` | 설치 뒤 스킬 종료. 학습자가 새 세션 3개를 돌린다 |
+| 1 관찰 | references/phase-1.md | runs/inputs/, runs/run-N.md | `check_phase.mjs 1` | 설치 뒤 스킬 종료. 학습자가 세션 N개를 동시에 돌린다 |
 | 2 판정 | references/phase-2.md | verdict.md (서브에이전트가 씀) | `check_phase.mjs 2 --approve` | 학습자 승인. 고정 불가면 종료 |
 | 3 고정 | references/phase-3.md | workflow.md | `check_phase.mjs 3 --approve` | 학습자 승인. 재판정이면 `rollback 2` |
 | 4 재검증 | references/phase-4.md | verify/, verify/report.md | `check_phase.mjs 4` | 차이 허용 여부는 학습자 |

@@ -62,3 +62,11 @@ test('--runs 와 --model 이 SKILL.md 와 단계 문서에 있다', () => {
   const p4 = readFileSync(`${REF}/phase-4.md`, 'utf8');
   assert.ok(p4.includes('A2W_MODEL') && p4.includes('STATUS'));
 });
+
+test('병렬 관찰: 프롬프트 1 은 입력 폴더 앞 숫자로 번호를 정하고, 안내는 세션을 동시에 열게 한다', () => {
+  const p1 = readFileSync(`${REF}/phase-1.md`, 'utf8');
+  assert.ok(p1.includes('입력 폴더 이름의 앞 숫자'), '번호 규칙');
+  assert.ok(!p1.includes('이미 있는 run 파일 다음 번호'), '다음 번호 규칙은 없앴다');
+  assert.ok(p1.includes('동시에'), '동시 관찰 안내');
+  assert.ok(p1.includes('관찰 방식'), 'README 에 동시·차례 판단을 적는다');
+});

@@ -148,25 +148,51 @@ function firstTs(p) {
   try { return String(JSON.parse(first).ts ?? ''); } catch { return ''; }
 }
 
-// runs/tools/<session>.jsonl 을 첫 줄 ts 순서로 run-N.tools.jsonl 에 옮긴다. 이미 있으면 건너뛴다.
+// 기록 안에서 처음 나오는 입력 폴더 번호. 세션은 초반에 자기 입력 폴더(inputs/<N>-…)를 읽는다.
+// JSON 문자열 안의 역슬래시는 \\ 로 적혀 있어 구분자를 하나 이상으로 본다.
+const INPUT_REF = /inputs[\/\\]+(\d+)-/;
+function inputNumber(p) {
+  for (const line of readFileSync(p, 'utf8').split('\n')) {
+    const m = line.match(INPUT_REF);
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
+// runs/tools/<session>.jsonl 을 run-N.tools.jsonl 로 옮긴다. 기록 안의 입력 경로로 N 을 정하므로 세션을 동시에
+// 열어 시작 순서가 뒤섞여도 맞는다. 경로가 없는 기록은 남은 run 에 첫 줄 시각 순으로 붙이고 경고한다.
 export function pairToolLogs(runsDir, runFiles) {
   const warnings = [];
   const toolsDir = join(runsDir, 'tools');
   if (!existsSync(toolsDir)) return warnings;
   const logs = readdirSync(toolsDir)
     .filter(f => f.endsWith('.jsonl'))
-    .map(f => ({ f, ts: firstTs(join(toolsDir, f)) }))
-    .sort((a, b) => a.ts.localeCompare(b.ts));
+    .map(f => ({ f, ts: firstTs(join(toolsDir, f)), n: inputNumber(join(toolsDir, f)) }));
   if (logs.length === 0) return warnings;
   if (logs.length !== runFiles.length) {
-    warnings.push(`훅 기록 ${logs.length}개, run 파일 ${runFiles.length}개. 순서로 짝지었으니 판정 때 대조를 확인하라`);
+    warnings.push(`훅 기록 ${logs.length}개, run 파일 ${runFiles.length}개. 판정 때 대조를 확인하라`);
   }
-  logs.forEach((log, i) => {
-    const run = runFiles[i];
-    if (!run) return;
-    const dest = join(runsDir, run.replace(/\.md$/, '.tools.jsonl'));
-    if (!existsSync(dest)) renameSync(join(toolsDir, log.f), dest);
-  });
+  const destFor = (run) => join(runsDir, run.replace(/\.md$/, '.tools.jsonl'));
+  const runByN = new Map(runFiles.map(r => [runNumber(r), r]));
+  const taken = new Set(runFiles.filter(r => existsSync(destFor(r))));
+  const leftover = [];
+  for (const log of logs) {
+    const run = log.n === null ? undefined : runByN.get(log.n);
+    if (run && !taken.has(run)) { renameSync(join(toolsDir, log.f), destFor(run)); taken.add(run); }
+    else leftover.push(log);
+  }
+  if (leftover.length) {
+    const freeRuns = runFiles.filter(r => !taken.has(r));
+    const paired = [];
+    leftover.sort((a, b) => a.ts.localeCompare(b.ts)).forEach((log, i) => {
+      const run = freeRuns[i];
+      if (!run) return;
+      renameSync(join(toolsDir, log.f), destFor(run));
+      taken.add(run);
+      paired.push(run.replace(/\.md$/, ''));
+    });
+    if (paired.length) warnings.push(`훅 기록 ${paired.length}개에서 입력 경로(inputs/<N>-)를 찾지 못해 시각 순으로 ${paired.join(', ')} 에 붙였다. 색인 머리의 시각과 run 파일을 대조하라`);
+  }
   // 다 옮겨서 비었으면 폴더도 치운다. 사람이 둔 파일이 있으면 그대로 둔다
   if (readdirSync(toolsDir).length === 0) rmdirSync(toolsDir);
   return warnings;

@@ -144,3 +144,29 @@ test('phase1: runs 옵션이 요구 개수를 정하고 runCount 를 돌려준�
   assert.deepEqual(r.errors, []);
   assert.equal(r.runCount, 1);
 });
+
+// 병렬 관찰: 세션 시작 순서와 무관하게 기록 안의 입력 경로로 짝짓는다. 경로가 없으면 시각 순으로 후퇴하고 경고한다.
+test('pairToolLogs: 입력 경로 inputs/<N>- 로 짝짓는다. 2번 세션이 먼저 시작해도 run-2 에 붙는다', () => {
+  const app = goodApp();
+  write(app, `${A2W}/runs/tools/s-early.jsonl`, `${REC('2026-09-11T01:00:00.000Z', 'Bash', { command: 'ls ../x-app/docs/agent-to-webapp/runs/inputs/2-normal-helios' })}\n`);
+  write(app, `${A2W}/runs/tools/s-late.jsonl`, `${REC('2026-09-11T01:00:05.000Z', 'Read', { file_path: ['C:', 'x-app', 'docs', 'agent-to-webapp', 'runs', 'inputs', '1-easy-nova', 'rfq.pdf'].join(String.fromCharCode(92)) })}\n`);
+  write(app, `${A2W}/runs/tools/s-third.jsonl`, `${REC('2026-09-11T01:00:03.000Z', 'Read', { file_path: '/x-app/docs/agent-to-webapp/runs/inputs/3-edge-orion/mail.md' })}\n`);
+  const r = checkPhase1(join(app, A2W));
+  assert.equal(r.ok, true);
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-1.tools.jsonl'), 'utf8').includes('1-easy-nova'));
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-2.tools.jsonl'), 'utf8').includes('2-normal-helios'));
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-3.tools.jsonl'), 'utf8').includes('3-edge-orion'));
+  assert.ok(!r.warnings.some(w => w.includes('시각 순')));
+});
+
+test('pairToolLogs: 경로가 없는 기록은 남은 run 에 시각 순으로 붙이고 경고한다', () => {
+  const app = goodApp();
+  write(app, `${A2W}/runs/tools/a.jsonl`, `${REC('2026-09-11T01:00:00.000Z', 'Bash', { command: 'ls inputs/3-edge-orion' })}\n`);
+  write(app, `${A2W}/runs/tools/b.jsonl`, `${REC('2026-09-11T01:00:09.000Z', 'Bash', { command: 'pwd' })}\n`);
+  write(app, `${A2W}/runs/tools/c.jsonl`, `${REC('2026-09-11T01:00:05.000Z', 'Bash', { command: 'whoami' })}\n`);
+  const r = checkPhase1(join(app, A2W));
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-3.tools.jsonl'), 'utf8').includes('3-edge-orion'));
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-1.tools.jsonl'), 'utf8').includes('whoami'), '남은 run-1·run-2 에 시각 순');
+  assert.ok(readFileSync(join(app, A2W, 'runs/run-2.tools.jsonl'), 'utf8').includes('pwd'));
+  assert.ok(r.warnings.some(w => w.includes('시각 순') && w.includes('run-1') && w.includes('run-2')), r.warnings.join('|'));
+});
