@@ -14,10 +14,10 @@
 
 ## 2. verify/ 작성
 
-러너와 라이브러리는 스킬 자산이다. 먼저 템플릿을 복사한다. `verify/` 가 이미 있으면 빠진 파일만 채운다.
+러너와 라이브러리는 스킬 자산이다. 먼저 템플릿을 복사한다. `-n` 이라 이미 있는 파일(의존을 더한 package.json 등)은 덮지 않고 빠진 것만 채운다.
 
 ```
-cp -r "$SKILL_DIR/assets/verify-template/." "$A2W/verify/"
+cp -rn "$SKILL_DIR/assets/verify-template/." "$A2W/verify/"
 ```
 
 구성은 고정이다. LLM 이 쓰는 것은 `steps/` 와 `package.json` 의 의존 목록, 실행 뒤의 `report.md` 뿐이다.
@@ -28,7 +28,7 @@ $A2W/verify/
   lib/step.ts       템플릿. 단계 계약(Step, Goto, Skip, NeedsAttention, ctx). 고치지 않는다
   lib/llm.ts        템플릿. callTool(도구 1개 강제, JSON 만), fileBlocks(PDF·이미지·텍스트). 고치지 않는다
   package.json      템플릿. 단계에 꼭 필요한 순수 JS 패키지만 dependencies 에 더한다
-  .gitignore        템플릿. node_modules, .env, out
+  .gitignore        템플릿. node_modules, .env (out/ 은 커밋한다. 재검증 증거이고 --from 이 읽는다)
   steps/index.ts    `steps: Step[]` 를 내보낸다. workflow.md 의 번호·이름·실행 주체 순서 그대로
   steps/<nn>-<이름>.ts   단계당 함수 하나. 입출력 타입은 workflow.md 의 JSON 스키마
   out/<입력>/       실행이 쓴다. NN-이름.json(단계 출력), summary.json(상태·시간·LLM 사용량·사람 메모·되돌아가기)

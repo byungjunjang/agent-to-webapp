@@ -104,7 +104,7 @@ function key(cwd, flags, out, err) {
   const others = r.sources.filter(s => s !== r.active).map(s => LABELS[s]);
   out(`API 키: ${LABELS[r.active]} 에서 읽는다${others.length ? ` (가려진 곳: ${others.join(', ')})` : ''}`);
   const skillEnv = r.skillFile.split(sep).join('/');
-  out(`실행: node --env-file-if-exists="${skillEnv}" --env-file-if-exists=.env run.ts <입력 폴더>`);
+  out(`실행: node --env-file-if-exists="${skillEnv}" --env-file-if-exists=.env run.ts <입력 폴더> [--from N]`);
   return 0;
 }
 

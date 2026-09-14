@@ -103,7 +103,8 @@ Vercel 에 바이브 코딩)가 실습에서 가장 자주 실패하는 케이�
 
   세 파일 모두 git 추적 대상이 아니다. `CLAUDE.local.md` 는 `.gitignore` 에 없으면 untracked
   로 보이기만 하니 학습자에게 알린다. 5단계 통과 후 제거를 안내한다
-- 산출물: `runs/run-N.md`(자기 보고, 헤딩 고정), `runs/run-N.tools.jsonl`(훅 기록)
+- 산출물: `runs/run-N.md`(자기 보고, 헤딩 고정), `runs/run-N.tools.jsonl`(훅 기록), `runs/run-N.tools.md`(게이트가
+  만드는 색인. 2단계가 jsonl 대신 읽는다)
 - 게이트: run 파일 3개 이상, inputs 3개 이상 + README, 각 run 에 `## 판단이 필요했던 지점`
   헤딩 존재. 헤딩 문자열은 기록 프롬프트가 지정하고 게이트가 그대로 찾는다
 
@@ -157,7 +158,8 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
   전용 도구(`@oai/artifact-tool` 같은 것)에 묶인 단계는 TS 재작성을 먼저 시도하고, 안 되면
   `외부 서비스로 뺄 단계` 로 표시한다. `child_process` 로 Python 을 부르는 것은 금지 —
   Vercel 에서 안 도니 검증이 안 된다
-- 산출물: `verify/` — 단계당 함수 하나(`steps/`), `run.ts`, `package.json`, `.gitignore`
+- 산출물: `verify/` — 러너·라이브러리(`run.ts`, `lib/`)는 스킬 자산 `assets/verify-template` 에서 복사, LLM 이
+  쓰는 것은 `steps/index.ts`(단계 배열)와 단계당 함수 하나(`steps/`). `package.json`, `.gitignore`
   (node_modules, .env), `report.md`(입력 3개의 결과와 로컬 에이전트 결과의 차이, 사용한 모델명,
   외부 서비스로 뺄 단계 목록)
 - 게이트: `report.md` 에 3건 결과, 모델명, 외부 서비스 절(비어 있어도 절은 있어야 한다).
@@ -177,7 +179,7 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
   — 산출물이 이미 `docs/agent-to-webapp/` 에 있으므로 폴더를 더 만들지 않는다. 대상의 로컬
   전용 파일 제거를 안내한다. **같은 폴더에서 새 세션을 열어** 전환 프롬프트(§7-5)로 바이브
   코딩을 시작한다. 그 세션이 `create-next-app` 을 돌리고(`docs/`·`.git` 은 허용 목록에 있다)
-  `docs/agent-to-webapp/verify/steps/` 를 `src/lib/workflow/` 로 복사한다
+  `docs/agent-to-webapp/verify/steps/` 와 `verify/lib/` 를 `src/lib/workflow/` 로 복사한다
 - 산출물: `port-brief.md`
 - 게이트: 브리프에 다음 일곱 가지가 명시돼 있다
   1. Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만
@@ -224,7 +226,7 @@ CLAUDE.md·skills·settings 를 모두 읽는다(v0.1.0 에서 잠깐 바뀌었�
         out/<입력>/NN-이름.json  summary.json                         ← 실행이 쓴다
         report.md
       port-brief.md                웹 앱 전환 브리프 (5단계)
-    (5단계 뒤 새 세션이 create-next-app 으로 채운다. src/lib/workflow/ ← verify/steps/)
+    (5단계 뒤 새 세션이 create-next-app 으로 채운다. src/lib/workflow/ ← verify/steps/ + verify/lib/)
 ```
 
 ## 6. 스킬 파일 구조
