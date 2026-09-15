@@ -1,7 +1,7 @@
-// 3단계 고정 게이트: 흐름도와 단계 대조, 단계별 네 필드 + json 스키마, 규칙화 불가 항목의 재배치.
+// 3단계 고정 게이트: 흐름도와 단계 대조, 단계별 네 필드 + json 스키마, 규칙화 불가 항목의 재배치, 웹 앱 간소화 점검.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { normalize, sectionBody } from './md.mjs';
+import { normalize, sectionBody, isBlank } from './md.mjs';
 
 export const STEP_HEADING = '### 단계 ';
 export const ACTORS = ['코드', 'LLM', '사람'];
@@ -16,6 +16,9 @@ export const DIAGRAM_HEADING = '## 흐름도';
 export const ACTOR_CLASS = { 코드: 'code', LLM: 'llm', 사람: 'human' };
 // 스키마는 json 블록 대신 참조로 쓸 수 있다: '단계 N 출력과 같음' / '공통 스키마 <이름>' / (출력만) '입력과 같음'
 export const COMMON_SCHEMA_HEADING = '## 공통 스키마';
+// 웹 앱에 필요 없는 단계 경계(로컬 흔적, 분기 없는 코드 단계, 중간 사람 단계)를 점검한 결과. 4단계 전에 줄여야
+// 검증한 steps/ 와 5단계가 옮기는 코드가 같다.
+export const SIMPLIFY_HEADING = '## 웹 앱 간소화';
 const REF_STEP = /단계\s*(\d+)\s*(?:의\s*)?출력/;
 const REF_COMMON = /공통\s*스키마\s*[`'"]?([A-Za-z0-9_-]*)/;
 const REF_SAME = /입력과\s*같/;
@@ -61,11 +64,15 @@ function hasJsonAfter(body, field) {
   return /^[^\n]*\n\s*```json[^\n]*\n[\s\S]*?\n\s*```/.test(after);
 }
 
-// '## 흐름도' 절의 mermaid 블록에서 노드 'S<단계 번호>' 와 그 class 를 뽑는다. 라벨(큰따옴표)은 먼저 지운다.
+// 화살표 하나: 'A --> B', 'A -->|| B', 'A -- --> B'(라벨을 지운 '-- "라벨" -->'), 'A -.-> B'. 뒤 노드는 소비하지 않아 체인을 잇는다.
+const NODE = String.raw`([A-Za-z_]\w*)[\[\](){}<>\/]*(?::::\w+)?`;
+const EDGE = new RegExp(String.raw`${NODE}\s*(?:--\s+)?(?:-{2,}>|-\.+->|={2,}>)\s*(?:\|[^|\n]*\|)?\s*(?=${NODE})`, 'g');
+
+// '## 흐름도' 절의 mermaid 블록에서 노드 'S<단계 번호>' 와 그 class, 단계 노드끼리의 화살표를 뽑는다. 라벨(큰따옴표)은 먼저 지운다.
 export function parseDiagram(text) {
   const body = sectionBody(text, DIAGRAM_HEADING);
   const m = body && body.match(/```mermaid[^\n]*\n([\s\S]*?)\n\s*```/);
-  if (!m) return { found: false, nodes: [], classes: {} };
+  if (!m) return { found: false, nodes: [], classes: {}, edges: [] };
   const src = m[1].replace(/"[^"\n]*"/g, '');
   const nodes = [...new Set([...src.matchAll(/\bS(\d+)\b/g)].map(x => Number(x[1])))].sort((a, b) => a - b);
   const classes = {};
@@ -76,7 +83,35 @@ export function parseDiagram(text) {
     }
   }
   for (const x of src.matchAll(/\bS(\d+)[\[\](){}<>\/]*:::(code|llm|human)\b/g)) classes[Number(x[1])] = x[2];
-  return { found: true, nodes, classes };
+  const edges = [];
+  const seen = new Set();
+  for (const line of src.split('\n')) {
+    for (const x of line.matchAll(EDGE)) {
+      const [a, b] = [x[1], x[2]].map(id => id.match(/^S(\d+)$/));
+      if (!a || !b || seen.has(`${a[1]}>${b[1]}`)) continue;
+      seen.add(`${a[1]}>${b[1]}`);
+      edges.push([Number(a[1]), Number(b[1])]);
+    }
+  }
+  return { found: true, nodes, classes, edges };
+}
+
+// 분기 없이 이어지는 코드 단계 쌍: N 에서 나가는 화살표가 N+1 하나뿐이고 N+1 로 들어오는 화살표도 N 하나뿐.
+// 되돌아가기·건너뛰기가 걸리면 단계 경계가 필요한 것이다.
+export function mergeableCodePairs(steps, edges) {
+  if (edges.length === 0) return [];
+  const actor = new Map(steps.map(s => [s.n, s.actor]));
+  const outs = (n) => new Set(edges.filter(([a, b]) => a === n && b !== n).map(([, b]) => b));
+  const ins = (n) => new Set(edges.filter(([a, b]) => b === n && a !== n).map(([a]) => a));
+  const pairs = [];
+  for (const s of steps) {
+    const n = s.n;
+    if (n === null || actor.get(n) !== '코드' || actor.get(n + 1) !== '코드') continue;
+    const o = outs(n);
+    const i = ins(n + 1);
+    if (o.size === 1 && o.has(n + 1) && i.size === 1 && i.has(n)) pairs.push([n, n + 1]);
+  }
+  return pairs;
 }
 
 export function parseWorkflow(text) {
@@ -134,7 +169,8 @@ export function checkPhase3(a2wDir) {
   const warnings = [];
   const p = join(a2wDir, 'workflow.md');
   if (!existsSync(p)) return { ok: false, errors: ['workflow.md 없음'], warnings, rejudge: false, stepCount: 0 };
-  const { steps, unruled, hasUnruledSection, diagram, common } = parseWorkflow(readFileSync(p, 'utf8'));
+  const text = readFileSync(p, 'utf8');
+  const { steps, unruled, hasUnruledSection, diagram, common } = parseWorkflow(text);
 
   if (steps.length === 0) errors.push(`'${STEP_HEADING}N: 이름' 헤딩이 하나도 없다`);
   for (const s of steps) {
@@ -162,6 +198,14 @@ export function checkPhase3(a2wDir) {
     for (const n of diagram.nodes) {
       if (!stepNums.has(n)) errors.push(`흐름도의 S${n} 에 맞는 '${STEP_HEADING}${n}' 없음. 끝점(완료·needs_attention)은 S숫자가 아닌 id 를 쓴다`);
     }
+    for (const [a, b] of mergeableCodePairs(steps, diagram.edges)) {
+      warnings.push(`단계 ${a}·${b}: 분기 없이 이어지는 코드 단계다. 웹 앱에서는 함수·상태만 늘린다. 합치거나 '${SIMPLIFY_HEADING}' 에 유지 이유를 적는다`);
+    }
+  }
+
+  const simplify = sectionBody(text, SIMPLIFY_HEADING);
+  if (simplify === null || isBlank(simplify)) {
+    errors.push(`'${SIMPLIFY_HEADING}' 절이 ${simplify === null ? '없다' : '비었다'}. 웹 앱에 필요 없는 단계를 점검한 결과를 적는다. 줄인 것이 없으면 '- 없음'`);
   }
 
   let rejudge = false;

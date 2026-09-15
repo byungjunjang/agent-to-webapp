@@ -7,8 +7,9 @@
 `references/port-brief-template.md` 를 `$A2W/port-brief.md` 로 복사하고 일곱 절을 채운다. 헤딩은 고치지 않는다.
 
 - 2. 실행 시간 분할: `verify/out/<입력>/summary.json` 의 `timings` 에서 단계별 시간을 옮긴다
-- 3. 상태 저장: workflow.md 에 실행 주체 "사람" 단계가 있거나, summary.json 의 `total_ms` 가 함수 제한(기본 60초로
-  본다)을 넘으면 `Supabase`. 둘 다 아니면 `DB 없음` 이라고 첫 줄에 쓴다
+- 3. 상태 저장: workflow.md 의 실행 주체 "사람" 단계가 중간에 있거나(뒤에 단계가 더 있다), summary.json 의 `total_ms` 가
+  함수 제한(기본 60초로 본다)을 넘으면 `Supabase`. 둘 다 아니면 `DB 없음` 이라고 첫 줄에 쓴다. 사람 단계가 마지막이면 결과 화면의
+  승인·반려로 만들고 DB 를 두지 않는다(3단계 웹 앱 간소화가 옮긴 경우)
 - 5. 외부 서비스로 뺄 단계: report.md 의 같은 절을 옮기고 각 항목의 임시 처리를 적는다. 없으면 `- 없음`
 - 6. 인증: "범위 밖. 단일 사용자 데모" 를 그대로 쓴다
 - 1. 서버 쪽 호출의 `A2W_MODEL` 에는 STATUS 의 `model` ID 를 적는다. 관찰·재검증과 같은 모델로 시작한다
@@ -64,7 +65,7 @@ docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽�
   단계를 순서대로 부르고 Goto·Skip·NeedsAttention 을 처리하는 부분은 verify/run.ts 의 runPipeline 과 같게 서버 쪽에 옮긴다
 - Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
 - 상태 저장은 브리프의 "3. 상태 저장" 이 정한 대로. Supabase 면 단계별 상태를 저장하고 오래 걸리는 단계는 나눌 것
-- workflow.md 의 사람 단계는 UI 승인 단계로 만들고 승인 상태를 남길 것
+- workflow.md 의 사람 단계는 UI 승인 단계로 만들고 승인 상태를 남길 것. DB 없음이면 결과 화면에서 승인·반려하고, 반려는 메모와 함께 다시 실행한다
 - 인증은 만들지 말 것. 단일 사용자 데모다
 - 화면은 입력 → 진행 상태 → 결과 셋이면 충분
 ```

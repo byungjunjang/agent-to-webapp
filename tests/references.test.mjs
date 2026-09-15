@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { BRIEF_HEADINGS, PROMPT_FILE, PROMPT_MUST } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
 import { RUN_HEADINGS } from '../.claude/skills/agent-to-webapp/scripts/lib/phase1.mjs';
 import { QUADRANTS, VERDICTS, VERDICT_PREFIX } from '../.claude/skills/agent-to-webapp/scripts/lib/phase2.mjs';
-import { FIELD_ACTOR, FIELD_IN, FIELD_OUT, FIELD_FAIL, UNRULED_HEADING, DIAGRAM_HEADING, COMMON_SCHEMA_HEADING } from '../.claude/skills/agent-to-webapp/scripts/lib/phase3.mjs';
+import { FIELD_ACTOR, FIELD_IN, FIELD_OUT, FIELD_FAIL, UNRULED_HEADING, DIAGRAM_HEADING, COMMON_SCHEMA_HEADING, SIMPLIFY_HEADING } from '../.claude/skills/agent-to-webapp/scripts/lib/phase3.mjs';
 import { REPORT_MODEL, REPORT_INPUT, REPORT_HUMAN, REPORT_EXTERNAL, REPORT_FIXES } from '../.claude/skills/agent-to-webapp/scripts/lib/phase4.mjs';
 
 const REF = '.claude/skills/agent-to-webapp/references';
@@ -43,7 +43,7 @@ test('phase-N.md 가 자기 프롬프트를 담고, 게이트 상수와 문자�
   for (const v of VERDICTS) assert.ok(p2.includes(`${VERDICT_PREFIX} ${v}`), v);
   assert.ok(p2.includes('tools.md'), '색인을 먼저 읽게 한다');
   const p3 = doc(3);
-  for (const s of [FIELD_ACTOR, FIELD_IN, FIELD_OUT, FIELD_FAIL, UNRULED_HEADING, DIAGRAM_HEADING, COMMON_SCHEMA_HEADING]) assert.ok(p3.includes(s), s);
+  for (const s of [FIELD_ACTOR, FIELD_IN, FIELD_OUT, FIELD_FAIL, UNRULED_HEADING, DIAGRAM_HEADING, COMMON_SCHEMA_HEADING, SIMPLIFY_HEADING]) assert.ok(p3.includes(s), s);
   assert.ok(p3.includes('출력과 같음'), '스키마 참조 형식');
   const p4 = doc(4);
   for (const s of [REPORT_MODEL, REPORT_INPUT, REPORT_HUMAN, REPORT_EXTERNAL, REPORT_FIXES]) assert.ok(p4.includes(s), s);

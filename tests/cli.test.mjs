@@ -117,7 +117,7 @@ test('3단계 rejudge → 실패 + rollback 안내', () => {
   passPhase1(app);
   write(app, `${A2W}/verdict.md`, VERDICT_OK);
   assert.equal(cli(app, '2', '--approve').code, 0);
-  write(app, `${A2W}/workflow.md`, `## 단계\n### 단계 1: a\n- 실행 주체: 코드\n- 입력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 출력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 실패 처리: 중단\n## 규칙화 불가\n- 순서가 바뀜 → 재판정: 흔들림\n`);
+  write(app, `${A2W}/workflow.md`, `## 단계\n### 단계 1: a\n- 실행 주체: 코드\n- 입력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 출력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 실패 처리: 중단\n## 규칙화 불가\n- 순서가 바뀜 → 재판정: 흔들림\n## 웹 앱 간소화\n- 없음\n`);
   const r = cli(app, '3', '--approve');
   assert.equal(r.code, 1);
   assert.ok(r.err.includes('rollback 2'));

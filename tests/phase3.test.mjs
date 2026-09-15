@@ -29,7 +29,8 @@ const GOOD_DIAGRAM = DIAGRAM(
   'class S2 code',
 );
 
-const GOOD = `# workflow: rfq\n${GOOD_DIAGRAM}## 단계\n${STEP(1, '스펙 추출')}${STEP(2, '루트 판정', '코드')}## 규칙화 불가\n- 없음\n`;
+const SIMPLIFY = '## 웹 앱 간소화\n- 없음\n';
+const GOOD = `# workflow: rfq\n${GOOD_DIAGRAM}## 단계\n${STEP(1, '스펙 추출')}${STEP(2, '루트 판정', '코드')}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
 
 function app(text) {
   const a = makeApp();
@@ -47,10 +48,23 @@ test('parseWorkflow: 단계·필드·규칙화 불가 항목', () => {
 });
 
 test('parseDiagram: 노드 번호와 class. 라벨 안의 S9 는 노드가 아니다', () => {
-  assert.deepEqual(parseDiagram(GOOD), { found: true, nodes: [1, 2], classes: { 1: 'llm', 2: 'code' } });
+  assert.deepEqual(parseDiagram(GOOD), { found: true, nodes: [1, 2], classes: { 1: 'llm', 2: 'code' }, edges: [[1, 2], [2, 1]] });
   const short = DIAGRAM('S1:::code --> S2{{"2 확인"}}:::human', 'class S3,S4 llm');
-  assert.deepEqual(parseDiagram(short), { found: true, nodes: [1, 2, 3, 4], classes: { 1: 'code', 2: 'human', 3: 'llm', 4: 'llm' } });
-  assert.deepEqual(parseDiagram('# 흐름도 없음\n'), { found: false, nodes: [], classes: {} });
+  assert.deepEqual(parseDiagram(short), { found: true, nodes: [1, 2, 3, 4], classes: { 1: 'code', 2: 'human', 3: 'llm', 4: 'llm' }, edges: [[1, 2]] });
+  assert.deepEqual(parseDiagram('# 흐름도 없음\n'), { found: false, nodes: [], classes: {}, edges: [] });
+});
+
+test('parseDiagram: 화살표는 체인·라벨 두 문법·점선을 읽고, 끝점과 잇는 것은 뺀다', () => {
+  const d = parseDiagram(DIAGRAM(
+    'IN["입력"] --> S1["1 a"] --> S2(["2 b"]) --> S3',
+    'S3 -->|"실패: 재추출"| S2',
+    'S3 -- "통과" --> S4{{"4 c"}}',
+    'S1 -.->|"못 가름"| NA("needs_attention")',
+    'S4 -.-> S1',
+    'classDef code fill:#e8eef7,stroke:#4a6fa5,color:#1a1a1a',
+    'class S1,S3 code',
+  ));
+  assert.deepEqual(d.edges, [[1, 2], [2, 3], [3, 2], [3, 4], [4, 1]]);
 });
 
 test('phase3: 정상 통과', () => {
@@ -113,7 +127,7 @@ test('phase3: 재판정 항목이 있으면 rejudge', () => {
 });
 
 test('phase3: 규칙화 불가 절이 없으면 경고, 단계가 없으면 실패', () => {
-  const r = checkPhase3(app(`${DIAGRAM('S1(["1 a"])', 'class S1 llm')}## 단계\n${STEP(1, 'a')}`));
+  const r = checkPhase3(app(`${DIAGRAM('S1(["1 a"])', 'class S1 llm')}## 단계\n${STEP(1, 'a')}${SIMPLIFY}`));
   assert.equal(r.ok, true);
   assert.ok(r.warnings.some(w => w.includes('규칙화 불가')));
   assert.equal(checkPhase3(app('# 빈 문서\n')).ok, false);
@@ -131,7 +145,7 @@ const COMMON = '## 공통 스키마\n### Specs\n```json\n{ "material": "string" 
 const DIAGRAM3 = DIAGRAM('S1(["1 a"]) --> S2["2 b"] --> S3{{"3 c"}}', 'class S1 llm', 'class S2 code', 'class S3 human');
 
 test('phase3: 입력 스키마가 앞 단계 출력·공통 스키마·입력과 같음 참조면 통과', () => {
-  const text = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n`;
+  const text = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
   const r = checkPhase3(app(text));
   assert.deepEqual(r.errors, []);
   const w = parseWorkflow(text);
@@ -148,4 +162,44 @@ test('phase3: 참조가 없는 단계·없는 공통 스키마·순환을 가리
   assert.ok(checkPhase3(app(noCommon)).errors.some(e => e.includes('단계 2') && e.includes('공통 스키마') && e.includes('Specs')));
   const cycle = `${DIAGRAM3}${COMMON}## 단계\n${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 3 출력과 같음', '입력과 같음')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n`;
   assert.ok(checkPhase3(app(cycle)).errors.some(e => e.includes('순환')));
+});
+
+// 웹 앱 간소화: 3단계가 웹 앱에 필요 없는 단계 경계를 점검했는지. 절이 없으면 실패, 합칠 만한 코드 단계는 경고.
+const CODE_STEPS = (n) => Array.from({ length: n }, (_, i) => REF_STEP(i + 1, `c${i + 1}`, i === 0 ? '공통 스키마 Specs' : `단계 ${i} 출력과 같음`, '공통 스키마 Specs')).join('');
+const flow = (...lines) => `${DIAGRAM(...lines)}${COMMON}## 단계\n`;
+
+test('phase3: 웹 앱 간소화 절이 없거나 비면 실패', () => {
+  const none = checkPhase3(app(GOOD.replace(SIMPLIFY, '')));
+  assert.equal(none.ok, false);
+  assert.ok(none.errors.some(e => e.includes('## 웹 앱 간소화')));
+  const empty = checkPhase3(app(GOOD.replace(SIMPLIFY, '## 웹 앱 간소화\n\n')));
+  assert.equal(empty.ok, false);
+  assert.ok(empty.errors.some(e => e.includes('## 웹 앱 간소화')));
+});
+
+test('phase3: 분기 없이 이어지는 코드 단계는 경고하고 통과는 막지 않는다', () => {
+  const text = `${flow('S1["1 c1"] --> S2["2 c2"] --> S3["3 c3"]', 'class S1,S2,S3 code')}${CODE_STEPS(3)}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
+  const r = checkPhase3(app(text));
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.ok, true);
+  const merge = r.warnings.filter(w => w.includes('분기 없이'));
+  assert.equal(merge.length, 2);
+  assert.ok(merge[0].includes('단계 1·2') && merge[0].includes('## 웹 앱 간소화'));
+  assert.ok(merge[1].includes('단계 2·3'));
+});
+
+test('phase3: 되돌아가기·건너뛰기가 걸린 코드 단계 쌍과 코드-LLM 쌍은 경고하지 않는다', () => {
+  const branched = `${flow(
+    'S1["1 c1"] --> S2["2 c2"] --> S3["3 c3"] --> S4["4 c4"]',
+    'S2 -->|"검증 실패"| S1',
+    'S1 -->|"건너뜀"| S4',
+    'class S1,S2,S3,S4 code',
+  )}${CODE_STEPS(4)}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
+  const r = checkPhase3(app(branched));
+  assert.deepEqual(r.errors, []);
+  // 1·2: 1 이 4 로도 간다. 2·3: 2 가 1 로도 간다. 3·4: 4 로 1 이 들어온다
+  assert.ok(!r.warnings.some(w => w.includes('분기 없이')), r.warnings.join('\n'));
+
+  const mixed = `${flow('S1(["1 a"]) --> S2["2 b"] --> S3{{"3 c"}}', 'class S1 llm', 'class S2 code', 'class S3 human')}${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
+  assert.ok(!checkPhase3(app(mixed)).warnings.some(w => w.includes('분기 없이')));
 });
