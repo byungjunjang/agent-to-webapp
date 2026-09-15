@@ -559,4 +559,6 @@ grill-me 에서 확인한 외부 사양(2026-09-11):
   산출물은 `.demo-projects/rfq-quote-generator-app/`, 시행착오는 LLM-Wiki `raw/practice/2026-09-14_Agent-To-Webapp-Dogfood-RFQ-Rerun.md`
 - 2026-09-14 사용자 결정: 다음 세션 프롬프트를 `prompt.md` 로 남기고 5단계 게이트가 확인한다(§2-24)
 - 2026-09-15 사용자 결정: 3단계에 웹 앱 간소화 점검(§2-25). 새 단계가 아니라 승인 전 절차와 절 하나로. rfq workflow.md 에 게이트를
-  대 보니 절 없음 실패 1·코드 단계 쌍 경고 2(4·5, 7·8). 재-dogfood 는 하지 않았다
+  대 보니 절 없음 실패 1·코드 단계 쌍 경고 2(4·5, 7·8). 같은 날 rfq 를 `rollback 3` 해 새 스킬로 3~5단계를 헤드리스로 다시 통과:
+  12단계 → 8단계, 견적 검토를 끝으로 옮겨 브리프가 Supabase 에서 `DB 없음` 으로, 입력당 41–50초·단가 일치. 기록은 LLM-Wiki
+  `raw/practice/2026-09-15_Agent-To-Webapp-Web-Simplify.md`
