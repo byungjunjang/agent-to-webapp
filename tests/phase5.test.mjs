@@ -18,6 +18,7 @@ ${BRIEF_HEADINGS[0]}
 Route Handler 에서만 Anthropic SDK 호출. 키는 환경변수
 ${BRIEF_HEADINGS[1]}
 단계 3 원가 계산이 40초. 단계마다 함수 하나
+maxDuration = 60
 ${BRIEF_HEADINGS[2]}
 DB 없음. 사람 확인 지점 없고 합계 55초
 ${BRIEF_HEADINGS[3]}
@@ -117,4 +118,10 @@ test('phase5: 입력 파일이 Vercel 요청 본문 상한 근처면 브리프�
   const d3 = app(BRIEF);
   write(d3, 'runs/inputs/1-easy/small.pdf', Buffer.alloc(1024));
   assert.deepEqual(checkPhase5(d3).errors, []);
+});
+
+// Vercel 함수의 기본 실행 시간 제한은 최대치보다 짧다. 브리프 2절이 maxDuration 값을 정해야 다음 세션이 Route Handler 에 넣는다.
+test('phase5: 2절에 maxDuration 이 없으면 실패', () => {
+  const r = checkPhase5(app(BRIEF.replace('\nmaxDuration = 60', '')));
+  assert.ok(r.errors.some(e => e.includes('2. 실행 시간 분할') && e.includes('maxDuration')), r.errors.join('\n'));
 });

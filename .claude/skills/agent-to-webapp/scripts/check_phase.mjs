@@ -41,7 +41,7 @@ const CHECKS = {
   1: (d, o) => checkPhase1(d, { runs: o.runs }),
   2: (d, o) => checkPhase2(d, { override: o.override, runs: o.runs }),
   3: (d) => checkPhase3(d),
-  4: (d, o) => checkPhase4(d, { skillDir: SKILL_DIR, runs: o.runs }),
+  4: (d, o) => checkPhase4(d, { skillDir: SKILL_DIR, runs: o.runs, model: o.model }),
   5: (d) => checkPhase5(d),
 };
 
@@ -123,7 +123,7 @@ function gate(cwd, n, flags, out, err) {
 
   const a2wDir = join(cwd, A2W_DIR);
   const override = typeof flags.override === 'string' ? flags.override : null;
-  const r = CHECKS[n](a2wDir, { override, runs: st.runs });
+  const r = CHECKS[n](a2wDir, { override, runs: st.runs, model: st.model });
   for (const w of r.warnings) out(`경고: ${w}`);
   for (const m of r.notes ?? []) out(m);
   if (!r.ok) {

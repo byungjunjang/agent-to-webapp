@@ -27,6 +27,8 @@ Claude 를 부르는 코드와 API 키는 Route Handler 또는 Server Action 에
 ## 2. 실행 시간 분할
 Vercel 함수는 실행 시간 제한이 있다. report.md 의 단계별 시간을 적고 제한을 넘는 단계는 나눈다.
 - 단계별 시간: <단계 N: n초 …>
+- 시간 합: <n초. 처음부터 돌린 실행의 값. `--from` 으로 이어 돌린 summary.json 은 앞 단계 시간이 빠져 있다>
+- 함수 실행 시간 설정: `maxDuration = <초>` (시간 합의 1.5배쯤. 기본 제한은 최대치보다 짧아 반드시 적는다. 플랜의 최대치를 넘으면 단계를 나눈다)
 - 나눌 단계: <없음 / 단계 N → 어떻게>
 
 ## 3. 상태 저장
@@ -51,6 +53,7 @@ Protection, Vercel Authentication 또는 Password). URL 을 아는 누구나 학
 - [ ] Vercel 환경변수에 `ANTHROPIC_API_KEY` 가 있다. Supabase 면 URL 과 키도
 - [ ] 브라우저 번들에 키가 없다: 빌드 뒤 `grep -r "sk-ant" .next/static` 결과가 비어 있다
 - [ ] 배포 보호가 켜져 있다: 로그아웃한 브라우저(시크릿 창)에서 URL 을 열면 Vercel 로그인이나 비밀번호를 요구한다
+- [ ] 단계를 순서대로 부르는 Route Handler 에 `export const maxDuration` 이 있고 값이 2절과 같다
 - [ ] `runs/inputs/` 의 3건을 배포된 앱에 차례로 넣었다
 - [ ] 결과를 `deploy-report.md` 에 `verify/report.md` 의 같은 입력과 나란히 적었다
 - [ ] 차이가 report.md 의 차이보다 크면 웹 개발 문제다(에이전트 설계 문제는 4단계에서 끝났다). 단계 분할·시간 제한·상태 저장 중 어디인지 좁혀 적었다

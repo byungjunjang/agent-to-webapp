@@ -22,7 +22,10 @@ export const PROMPT_MUST = [
   'create-next-app',
   'src/lib/workflow/',
   '3층 구조',
+  'maxDuration',
 ];
+// Vercel 함수의 기본 실행 시간 제한은 최대치보다 짧다. 브리프 2절이 값을 정하고 다음 세션이 Route Handler 에 넣는다(2026-09-22).
+export const DURATION_KEYWORD = 'maxDuration';
 // 3층 구조: 다음 세션이 웹 앱을 만들기 전에 화면·처리·데이터가 무엇인지 표 하나로 정해 둔다(2026-09-22).
 export const BRIEF_TIERS = '## 3층 구조';
 export const TIERS = ['화면(프리젠테이션)', '처리(비즈니스)', '데이터(저장·바깥)'];
@@ -71,6 +74,11 @@ export function checkPhase5(a2wDir) {
   const state = sectionBody(text, BRIEF_HEADINGS[2]) ?? '';
   if (!STATE_KEYWORDS.some(k => state.includes(k))) {
     errors.push(`port-brief.md: '${BRIEF_HEADINGS[2]}' 절에 '${STATE_KEYWORDS.join("' 또는 '")}' 이 명시돼야 한다`);
+  }
+
+  const split = sectionBody(text, BRIEF_HEADINGS[1]);
+  if (split !== null && !split.includes(DURATION_KEYWORD)) {
+    errors.push(`port-brief.md: '${BRIEF_HEADINGS[1]}' 절에 '${DURATION_KEYWORD} = <초>' 가 없다. 기본 제한은 최대치보다 짧아 값을 정해야 다음 세션이 Route Handler 에 넣는다`);
   }
 
   const tiers = sectionBody(text, BRIEF_TIERS);

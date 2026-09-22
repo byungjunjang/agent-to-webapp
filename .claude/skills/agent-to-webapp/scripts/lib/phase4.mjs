@@ -3,6 +3,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { sectionBody, isBlank, hasHeading, normalize } from './md.mjs';
 import { parseWorkflow, ACTOR_CLASS, STEP_HEADING } from './phase3.mjs';
+import { resolveModelId } from './models.mjs';
 
 export const REQUIRED_FILES = ['run.ts', 'package.json', '.gitignore', 'report.md', 'steps/index.ts'];
 // 스킬 자산 assets/verify-template 에서 복사되는 파일. LLM 이 고치면 경고한다(고친 내용이 스킬로 돌아와야 한다).
@@ -43,6 +44,36 @@ export function parseStepFile(text) {
 
 const squash = (s) => String(s).replace(/\s+/g, ' ').trim();
 
+// 실행 증거: 러너가 입력마다 verify/out/<입력>/summary.json 을 남긴다. 보고서 글이 아니라 이 파일로 실제 실행을 확인한다(2026-09-22).
+export const SUMMARY_FILE = 'summary.json';
+
+// runs/inputs/ 의 입력 폴더마다 summary.json 을 읽는다. 없거나 JSON 이 아니면 오류. 상태·모델·--from·보고서 모델은 경고.
+// model: STATUS 의 model(별칭 또는 ID). reportModel: report.md '## 모델' 절 본문.
+export function checkRunEvidence(inputsDir, outDir, { model = null, reportModel = '' } = {}) {
+  const errors = [];
+  const warnings = [];
+  const summaries = [];
+  if (!existsSync(inputsDir)) return { errors, warnings, summaries };
+  const inputs = readdirSync(inputsDir, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).sort();
+  const expected = model ? resolveModelId(model) : null;
+  for (const name of inputs) {
+    const rel = `verify/out/${name}/${SUMMARY_FILE}`;
+    const p = join(outDir, name, SUMMARY_FILE);
+    if (!existsSync(p)) { errors.push(`${rel} 없음. 러너를 이 입력으로 돌리지 않았다(또는 --out 을 다른 곳에 뒀다). 입력마다 한 번은 돌려야 한다`); continue; }
+    let s;
+    try { s = JSON.parse(readFileSync(p, 'utf8')); } catch { errors.push(`${rel} 이 JSON 이 아니다. 러너가 쓴 파일이어야 한다`); continue; }
+    summaries.push({ name, ...s });
+    if (s.status !== 'done') warnings.push(`${rel}: status ${s.status}${s.attention ? ` (${s.attention})` : ''}. report 의 입력 절에서 다뤘는지 확인하라. 허용 여부는 학습자가 판단한다`);
+    if (expected && s.model && s.model !== expected) warnings.push(`${rel}: model 이 ${s.model}. STATUS 의 model 은 ${expected} 다. 관찰과 다른 모델로 재검증하면 차이의 원인을 가를 수 없다`);
+    if (Number(s.from) > 1) warnings.push(`${rel}: --from ${s.from} 으로 이어 돌린 기록이라 total_ms·timings 가 단계 ${s.from} 부터다. 브리프 2절의 시간 합에 그대로 쓰지 마라`);
+  }
+  const used = [...new Set(summaries.map(s => s.model).filter(Boolean))];
+  for (const m of used) {
+    if (reportModel && !reportModel.includes(m)) warnings.push(`report.md '${REPORT_MODEL}' 절(${reportModel.trim().split('\n')[0]})에 summary 의 model ${m} 이 없다. 실제로 쓴 모델을 적는다`);
+  }
+  return { errors, warnings, summaries };
+}
+
 // workflow.md 의 단계와 steps/ 의 단계 객체를 대조한다. 어긋난 곳마다 오류 문자열 하나.
 export function compareSteps(workflowText, stepsDir, stepFiles) {
   const errors = [];
@@ -70,8 +101,8 @@ export function compareSteps(workflowText, stepsDir, stepFiles) {
   return errors;
 }
 
-// runs: STATUS 의 관찰 횟수. 입력 절도 그만큼만 요구한다.
-export function checkPhase4(a2wDir, { skillDir = null, runs = 3 } = {}) {
+// runs: STATUS 의 관찰 횟수. 입력 절도 그만큼만 요구한다. model: STATUS 의 model. summary.json 의 model 과 대조한다.
+export function checkPhase4(a2wDir, { skillDir = null, runs = 3, model = null } = {}) {
   const errors = [];
   const warnings = [];
   const vdir = join(a2wDir, 'verify');
@@ -109,9 +140,11 @@ export function checkPhase4(a2wDir, { skillDir = null, runs = 3 } = {}) {
   }
 
   const rp = join(vdir, 'report.md');
+  let reportModel = '';
   if (existsSync(rp)) {
     const text = readFileSync(rp, 'utf8');
-    if (isBlank(sectionBody(text, REPORT_MODEL))) errors.push(`report.md: '${REPORT_MODEL}' 절에 모델명이 없다`);
+    reportModel = sectionBody(text, REPORT_MODEL) ?? '';
+    if (isBlank(reportModel)) errors.push(`report.md: '${REPORT_MODEL}' 절에 모델명이 없다`);
     for (let n = 1; n <= runs; n++) {
       const body = sectionBody(text, `${REPORT_INPUT}${n}`);
       if (isBlank(body)) errors.push(`report.md: '${REPORT_INPUT}${n}' 절이 없거나 비었다`);
@@ -126,5 +159,8 @@ export function checkPhase4(a2wDir, { skillDir = null, runs = 3 } = {}) {
       warnings.push(`report.md: '${REPORT_FIXES}' 가 비어 있지 않다. 고친 내용을 workflow.md 의 그 단계에도 반영했는지 확인하라. 5단계는 둘을 함께 넘긴다`);
     }
   }
+  const evidence = checkRunEvidence(join(a2wDir, 'runs', 'inputs'), join(vdir, 'out'), { model, reportModel });
+  errors.push(...evidence.errors);
+  warnings.push(...evidence.warnings);
   return { ok: errors.length === 0, errors, warnings, notes, stepCount: stepFiles.length };
 }

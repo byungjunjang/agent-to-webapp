@@ -49,6 +49,7 @@ test('phase-N.md 가 자기 프롬프트를 담고, 게이트 상수와 문자�
   for (const s of [REPORT_MODEL, REPORT_INPUT, REPORT_HUMAN, REPORT_EXTERNAL, REPORT_FIXES]) assert.ok(p4.includes(s), s);
   assert.ok(p4.includes('verify-template') && p4.includes('steps/index.ts') && p4.includes('--from'));
   assert.ok(p4.includes('대조') && p4.includes('`n:`'), '4단계 게이트가 workflow.md 와 steps/ 를 대조한다고 문서가 말한다');
+  assert.ok(p4.includes('summary.json') && p4.includes('--from') && p4.includes('시간 합'), '4단계 게이트가 실행 증거 summary.json 을 읽는다고 문서가 말한다');
   const p5 = doc(5);
   const prompt5 = p5.slice(p5.indexOf('### 프롬프트 5'));
   for (const m of PROMPT_MUST) assert.ok(prompt5.includes(m), `프롬프트 5 에 ${m}`);
@@ -77,9 +78,9 @@ test('병렬 관찰: 프롬프트 1 은 입력 폴더 앞 숫자로 번호를 �
 // 3층 구조(화면·처리·데이터)와 논의점: 브리프 틀과 5단계 문서가 게이트가 찾는 문자열을 담는다.
 test('브리프 틀과 phase-5.md 가 3층 구조·논의점·배포 보호·파일 크기를 담는다', () => {
   const tpl = readFileSync(`${REF}/port-brief-template.md`, 'utf8');
-  for (const s of ['## 3층 구조', '## 논의점', '화면(프리젠테이션)', '처리(비즈니스)', '데이터(저장·바깥)', '배포 보호', '결정:']) assert.ok(tpl.includes(s), `틀에 ${s}`);
+  for (const s of ['## 3층 구조', '## 논의점', '화면(프리젠테이션)', '처리(비즈니스)', '데이터(저장·바깥)', '배포 보호', '결정:', 'maxDuration']) assert.ok(tpl.includes(s), `틀에 ${s}`);
   const p5 = readFileSync(`${REF}/phase-5.md`, 'utf8');
-  for (const s of ['## 3층 구조', '## 논의점', '결정:', '배포 보호', '파일 크기', 'src/lib/data/']) assert.ok(p5.includes(s), `phase-5 에 ${s}`);
+  for (const s of ['## 3층 구조', '## 논의점', '결정:', '배포 보호', '파일 크기', 'src/lib/data/', 'maxDuration']) assert.ok(p5.includes(s), `phase-5 에 ${s}`);
   const prompt5 = p5.slice(p5.indexOf('### 프롬프트 5'));
   assert.ok(prompt5.includes('3층 구조') && prompt5.includes('src/app/'), '프롬프트 5 가 층별 위치를 말한다');
 });

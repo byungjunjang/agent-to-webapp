@@ -11,7 +11,9 @@
   발송·결제·외부 저장 단계의 유무, 입력 파일 크기(`runs/inputs/` 의 최대 파일. 게이트가 재서 Vercel 요청 본문 상한 4.5MB 근처면
   안내 문구를 요구한다)
 - 논의점: 아래 "논의점 묻는 법" 대로. 조건이 걸린 것만 묻고 답을 `결정:` 으로 적는다. 없으면 `- 없음`
-- 2. 실행 시간 분할: `verify/out/<입력>/summary.json` 의 `timings` 에서 단계별 시간을 옮긴다
+- 2. 실행 시간 분할: `verify/out/<입력>/summary.json` 의 `timings` 에서 단계별 시간을 옮긴다. `--from` 으로 이어 돌린 summary 는 앞 단계
+  시간이 없으니 시간 합은 처음부터 돌린 실행의 값을 쓴다(4단계 게이트가 경고한다). `maxDuration` 은 시간 합의 1.5배쯤으로 정하되 플랜의
+  최대치 안에서. 최대치는 학습자가 자기 Vercel 플랜 문서에서 확인한다. 기본 제한은 최대치보다 짧아 값을 안 적으면 배포 뒤 첫 실행에서 끊긴다
 - 3. 상태 저장: workflow.md 의 실행 주체 "사람" 단계가 중간에 있거나(뒤에 단계가 더 있다), summary.json 의 `total_ms` 가
   함수 제한(기본 60초로 본다)을 넘으면 `Supabase`. 둘 다 아니면 `DB 없음` 이라고 첫 줄에 쓴다. 사람 단계가 마지막이면 결과 화면의
   승인·반려로 만들고 DB 를 두지 않는다(3단계 웹 앱 간소화가 옮긴 경우)
@@ -38,7 +40,7 @@
 
 아래 "프롬프트 5" 를 `$A2W/prompt.md` 에 남긴다. 5단계는 이 파일로 끝난다. 터미널에만 보여 주면 스크롤에 묻히고, 다른 기기나
 다음 날의 새 세션에서는 찾을 수 없다. 형식은 아래와 같고, 코드 블록 안은 프롬프트 5 원문 그대로다. 게이트가 코드 블록에서
-`PROMPT_MUST`(브리프·workflow 경로, `create-next-app`, `src/lib/workflow/`, `3층 구조`)를 찾는다.
+`PROMPT_MUST`(브리프·workflow 경로, `create-next-app`, `src/lib/workflow/`, `3층 구조`, `maxDuration`)를 찾는다.
 
 ````
 # 다음 세션 프롬프트: <이름>
@@ -58,8 +60,8 @@
 node $SKILL_DIR/scripts/check_phase.mjs 5
 ```
 
-일곱 절에 더해 `## 3층 구조` 표의 세 층, `## 논의점` 항목마다 `결정:`, 6절의 `배포 보호`, 그리고 `runs/inputs/` 의 최대 파일이
-Vercel 요청 본문 상한(4.5MB) 근처면 브리프의 `파일 크기` 안내를 본다. 최대 파일 크기는 통과 여부와 상관없이 알려 준다.
+일곱 절에 더해 `## 3층 구조` 표의 세 층, `## 논의점` 항목마다 `결정:`, 2절의 `maxDuration`, 6절의 `배포 보호`, 그리고 `runs/inputs/` 의
+최대 파일이 Vercel 요청 본문 상한(4.5MB) 근처면 브리프의 `파일 크기` 안내를 본다. 최대 파일 크기는 통과 여부와 상관없이 알려 준다.
 
 ## 4. 대상 정리 안내
 
@@ -86,6 +88,7 @@ docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽�
 - docs/agent-to-webapp/verify/steps/ 와 verify/lib/ 를 src/lib/workflow/ 로 복사해서 그대로 쓸 것. 로직을 다시 짜지 말 것.
   단계를 순서대로 부르고 Goto·Skip·NeedsAttention 을 처리하는 부분은 verify/run.ts 의 runPipeline 과 같게 서버 쪽에 옮긴다
 - Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
+- 단계를 순서대로 부르는 Route Handler 에 export const maxDuration 을 브리프 2절의 값으로 둘 것. 기본 제한은 최대치보다 짧다
 - 상태 저장은 브리프의 "3. 상태 저장" 이 정한 대로. Supabase 면 단계별 상태를 저장하고 오래 걸리는 단계는 나눌 것
 - workflow.md 의 사람 단계는 UI 승인 단계로 만들고 승인 상태를 남길 것. DB 없음이면 결과 화면에서 승인·반려하고, 반려는 메모와 함께 다시 실행한다
 - 브리프의 "3층 구조" 표대로 둘 것. 화면(프리젠테이션)은 src/app/, 처리(비즈니스)는 src/lib/workflow/, 데이터(저장·바깥)는 src/lib/data/.

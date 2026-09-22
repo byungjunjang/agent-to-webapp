@@ -105,6 +105,11 @@ node $SKILL_DIR/scripts/check_phase.mjs 4
 잡기 위해서다. 단계 파일은 `n:`, `name:`, `actor:` 를 그 순서로 한 줄씩 두고 `run` 은 그 뒤에 쓴다. `n:` 이 없는 파일
 (`common.ts` 같은 보조 파일)은 대조에서 뺀다.
 
+게이트는 `runs/inputs/` 의 입력 폴더마다 `verify/out/<입력>/summary.json` 을 읽는다. 없으면 실패다. 보고서 글이 아니라 러너가
+남긴 이 파일이 실행 증거다. status 가 done 이 아니면, model 이 STATUS 와 다르면, `--from` 으로 이어 돌려 시간 합이 부분이면, report 의
+`## 모델` 절이 summary 의 model 과 다르면 경고한다. `--from` 기록은 앞 단계 시간이 없으니 브리프 2절의 시간 합에는 처음부터 돌린
+실행의 값을 쓴다.
+
 그 밖의 통과는 형식만 본다. 세 입력의 차이가 허용 범위인지는 학습자가 판단한다. report 의 `## 입력 N` 세 절의 차이 표를
 보여주고 "이 차이로 웹 앱을 만들어도 되는가" 를 묻는다(`--batch` 면 생략). 아니라고 하면 workflow.md 를 고치고
 `rollback 3` 후 3단계부터 다시.
