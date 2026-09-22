@@ -50,7 +50,7 @@ description: 로컬 에이전트(Claude Code·Codex)를 웹 앱으로 옮기기 
 | 2 판정 | references/phase-2.md | verdict.md (서브에이전트가 씀) | `check_phase.mjs 2 --approve` | 학습자 승인. 고정 불가면 종료 |
 | 3 고정 | references/phase-3.md | workflow.md | `check_phase.mjs 3 --approve` | 학습자 승인. 재판정이면 `rollback 2` |
 | 4 재검증 | references/phase-4.md | verify/, verify/report.md | `check_phase.mjs 4` | 차이 허용 여부는 학습자 |
-| 5 전환 | references/phase-5.md | port-brief.md, prompt.md | `check_phase.mjs 5` | 새 세션 안내 뒤 종료 |
+| 5 전환 | references/phase-5.md | port-brief.md, prompt.md | `check_phase.mjs 5` | 논의점(조건 걸릴 때만, 최대 둘) 답 받기. 새 세션 안내 뒤 종료 |
 
 각 단계는 그 단계의 `references/phase-N.md` 를 읽고 그대로 한다. 프롬프트는 그 문서 안에 있다.
 2×2 표와 결정 축은 `references/decision-axes.md`, 브리프 틀은 `references/port-brief-template.md`,

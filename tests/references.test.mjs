@@ -73,3 +73,13 @@ test('병렬 관찰: 프롬프트 1 은 입력 폴더 앞 숫자로 번호를 �
   assert.ok(p1.includes('동시에'), '동시 관찰 안내');
   assert.ok(p1.includes('관찰 방식'), 'README 에 동시·차례 판단을 적는다');
 });
+
+// 3층 구조(화면·처리·데이터)와 논의점: 브리프 틀과 5단계 문서가 게이트가 찾는 문자열을 담는다.
+test('브리프 틀과 phase-5.md 가 3층 구조·논의점·배포 보호·파일 크기를 담는다', () => {
+  const tpl = readFileSync(`${REF}/port-brief-template.md`, 'utf8');
+  for (const s of ['## 3층 구조', '## 논의점', '화면(프리젠테이션)', '처리(비즈니스)', '데이터(저장·바깥)', '배포 보호', '결정:']) assert.ok(tpl.includes(s), `틀에 ${s}`);
+  const p5 = readFileSync(`${REF}/phase-5.md`, 'utf8');
+  for (const s of ['## 3층 구조', '## 논의점', '결정:', '배포 보호', '파일 크기', 'src/lib/data/']) assert.ok(p5.includes(s), `phase-5 에 ${s}`);
+  const prompt5 = p5.slice(p5.indexOf('### 프롬프트 5'));
+  assert.ok(prompt5.includes('3층 구조') && prompt5.includes('src/app/'), '프롬프트 5 가 층별 위치를 말한다');
+});
