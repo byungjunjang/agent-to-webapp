@@ -32,8 +32,9 @@ export const DECISION = '결정:';
 // URL 을 아는 누구나 학습자의 API 키로 앱을 돌릴 수 있다. 인증은 범위 밖이지만 배포 보호는 켠다.
 export const PROTECTION = '배포 보호';
 // Vercel 함수의 요청 본문 상한. 관찰 입력이 그 근처면 브리프에 파일 크기 안내가 있어야 한다.
+// multipart 면 원본 크기가 가지만 JSON 에 base64 로 담으면 1.33배라 3MB 부터 근처로 본다.
 export const BODY_LIMIT_MB = 4.5;
-export const SIZE_NEAR_BYTES = 4 * 1024 * 1024;
+export const SIZE_NEAR_BYTES = 3 * 1024 * 1024;
 export const SIZE_KEYWORD = '파일 크기';
 
 // runs/inputs/ 아래에서 가장 큰 파일. 폴더가 없으면 null.
@@ -100,7 +101,7 @@ export function checkPhase5(a2wDir) {
     const mb = (biggest.size / 1048576).toFixed(1);
     notes.push(`입력 파일 최대: runs/inputs/${biggest.rel} ${mb}MB (Vercel 함수 요청 본문 상한 ${BODY_LIMIT_MB}MB)`);
     if (biggest.size >= SIZE_NEAR_BYTES && !text.includes(SIZE_KEYWORD)) {
-      errors.push(`runs/inputs/${biggest.rel} 이 ${mb}MB. Vercel 함수 요청 본문 상한(${BODY_LIMIT_MB}MB) 근처다. '${BRIEF_TIERS}' 데이터 줄에 '${SIZE_KEYWORD}' 안내(상한과 넘을 때 처리)를 적어라`);
+      errors.push(`runs/inputs/${biggest.rel} 이 ${mb}MB. Vercel 함수 요청 본문 상한(${BODY_LIMIT_MB}MB) 근처다(JSON base64 면 1.33배). '${BRIEF_TIERS}' 데이터 줄에 '${SIZE_KEYWORD}' 안내(상한과 넘을 때 처리)를 적어라`);
     }
   }
 
