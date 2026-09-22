@@ -20,13 +20,30 @@ claude-sonnet-5
 - 없음
 `;
 
+// 3단계 산출물. 4단계 게이트가 steps/ 의 번호·이름·실행 주체를 이것과 대조한다.
+const WORKFLOW = `# workflow
+## 흐름도
+## 단계
+### 단계 1: 추출
+- 실행 주체: 코드
+- 입력 스키마: 공통 스키마 x
+- 출력 스키마: 입력과 같음
+- 실패 처리: 멈춤
+`;
+
+// 단계 파일 하나. 실제 산출물처럼 n·name·actor 가 객체 리터럴의 줄 하나씩이다.
+function stepFile(n, name, actor) {
+  return `import type { Step } from '../lib/step.ts';\nexport const step${n}: Step = {\n  n: ${n},\n  name: '${name}',\n  actor: '${actor}',\n  run(input) { return input; },\n};\n`;
+}
+
 function verifyApp(report = REPORT, { steps = true } = {}) {
   const a = makeApp();
   const v = `${A2W}/verify`;
+  write(a, `${A2W}/workflow.md`, WORKFLOW);
   write(a, `${v}/run.ts`, 'export {};');
   write(a, `${v}/package.json`, '{"name":"verify","type":"module"}');
   write(a, `${v}/.gitignore`, 'node_modules\n.env\n');
-  if (steps) { write(a, `${v}/steps/index.ts`, 'export const steps = [];'); write(a, `${v}/steps/step1.ts`, 'export const step1 = () => {};'); }
+  if (steps) { write(a, `${v}/steps/index.ts`, 'export const steps = [step1];'); write(a, `${v}/steps/01-추출.ts`, stepFile(1, '추출', 'code')); }
   write(a, `${v}/report.md`, report);
   return join(a, A2W);
 }
@@ -124,4 +141,71 @@ test('phase4: runs 가 1 이면 입력 절도 1개만 요구한다', () => {
   const one = REPORT.replace('## 입력 2: normal\n수량 표기 차이\n## 입력 3: edge\n에스컬레이션 동일\n', '');
   assert.ok(checkPhase4(verifyApp(one)).errors.some(e => e.includes('입력 2')));
   assert.deepEqual(checkPhase4(verifyApp(one), { runs: 1 }).errors, []);
+});
+
+// 설계서와 코드 대조: workflow.md 의 '### 단계 N' 과 steps/ 의 n·name·actor 가 같아야 한다. 학습자가 3단계에서 승인한
+// 설계와 5단계가 웹 앱으로 복사하는 코드가 어긋나는 것을 모델의 자기 보고에 기대지 않고 게이트가 잡는다.
+const WORKFLOW2 = WORKFLOW + `### 단계 2: 판정
+- 실행 주체: LLM
+- 입력 스키마: 단계 1 출력과 같음
+- 출력 스키마: 공통 스키마 x
+- 실패 처리: 재시도
+`;
+const OK_FILES = { '01-추출.ts': stepFile(1, '추출', 'code'), '02-판정.ts': stepFile(2, '판정', 'llm') };
+
+function stepsApp(files) {
+  const d = verifyApp(REPORT, { steps: false });
+  write(d, 'workflow.md', WORKFLOW2);
+  write(d, 'verify/steps/index.ts', 'export const steps = [];');
+  for (const [f, text] of Object.entries(files)) write(d, `verify/steps/${f}`, text);
+  return d;
+}
+
+test('phase4: steps 의 번호·이름·실행 주체가 workflow.md 와 같으면 통과', () => {
+  const r = checkPhase4(stepsApp(OK_FILES));
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.stepCount, 2);
+});
+
+test('phase4: 단계 이름이 workflow.md 와 다르면 실패', () => {
+  const r = checkPhase4(stepsApp({ ...OK_FILES, '02-판정.ts': stepFile(2, '검증', 'llm') }));
+  assert.ok(r.errors.some(e => e.includes('단계 2') && e.includes('판정') && e.includes('검증')), r.errors.join('\n'));
+});
+
+test('phase4: 실행 주체가 workflow.md 와 다르면 실패', () => {
+  const r = checkPhase4(stepsApp({ ...OK_FILES, '02-판정.ts': stepFile(2, '판정', 'code') }));
+  assert.ok(r.errors.some(e => e.includes('단계 2') && e.includes('LLM') && e.includes('code')), r.errors.join('\n'));
+});
+
+test('phase4: workflow.md 의 단계가 steps/ 에 없으면 실패', () => {
+  const r = checkPhase4(stepsApp({ '01-추출.ts': OK_FILES['01-추출.ts'] }));
+  assert.ok(r.errors.some(e => e.includes('단계 2') && e.includes('없다')), r.errors.join('\n'));
+});
+
+test('phase4: steps/ 에만 있는 단계 번호는 실패', () => {
+  const r = checkPhase4(stepsApp({ ...OK_FILES, '03-발송.ts': stepFile(3, '발송', 'code') }));
+  assert.ok(r.errors.some(e => e.includes('03-발송.ts') && e.includes('workflow.md')), r.errors.join('\n'));
+});
+
+test('phase4: n·name·actor 가 없는 보조 파일은 대조에서 뺀다', () => {
+  const r = checkPhase4(stepsApp({ ...OK_FILES, 'common.ts': 'export const round = (x: number) => Math.round(x);\n' }));
+  assert.deepEqual(r.errors, []);
+});
+
+test('phase4: LLM 단계 파일의 도구 이름(name:)을 단계 이름으로 오인하지 않는다', () => {
+  const tool = "const TOOL = {\n  name: 'record_specs',\n  description: 'x',\n  input_schema: {},\n};\n";
+  const r = checkPhase4(stepsApp({ ...OK_FILES, '02-판정.ts': tool + stepFile(2, '판정', 'llm') }));
+  assert.deepEqual(r.errors, []);
+});
+
+test('phase4: 단계 파일에 n 은 있는데 name·actor 가 없으면 실패', () => {
+  const broken = 'export const step2 = {\n  n: 2,\n  run(i) { return i; },\n};\n';
+  const r = checkPhase4(stepsApp({ ...OK_FILES, '02-판정.ts': broken }));
+  assert.ok(r.errors.some(e => e.includes('02-판정.ts') && e.includes('actor')), r.errors.join('\n'));
+});
+
+test('phase4: workflow.md 가 없으면 실패', () => {
+  const d = stepsApp(OK_FILES);
+  rmSync(join(d, 'workflow.md'));
+  assert.ok(checkPhase4(d).errors.some(e => e.includes('workflow.md')));
 });

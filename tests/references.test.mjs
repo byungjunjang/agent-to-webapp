@@ -48,6 +48,7 @@ test('phase-N.md 가 자기 프롬프트를 담고, 게이트 상수와 문자�
   const p4 = doc(4);
   for (const s of [REPORT_MODEL, REPORT_INPUT, REPORT_HUMAN, REPORT_EXTERNAL, REPORT_FIXES]) assert.ok(p4.includes(s), s);
   assert.ok(p4.includes('verify-template') && p4.includes('steps/index.ts') && p4.includes('--from'));
+  assert.ok(p4.includes('대조') && p4.includes('`n:`'), '4단계 게이트가 workflow.md 와 steps/ 를 대조한다고 문서가 말한다');
   const p5 = doc(5);
   const prompt5 = p5.slice(p5.indexOf('### 프롬프트 5'));
   for (const m of PROMPT_MUST) assert.ok(prompt5.includes(m), `프롬프트 5 에 ${m}`);
