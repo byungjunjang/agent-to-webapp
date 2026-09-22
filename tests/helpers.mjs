@@ -16,3 +16,5 @@ export function write(appDir, rel, text) {
 }
 
 export const A2W = 'docs/agent-to-webapp';
+
+export const LITE = 'docs/agent-to-webapp-lite';
