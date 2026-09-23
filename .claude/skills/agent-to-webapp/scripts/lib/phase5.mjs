@@ -20,6 +20,7 @@ export const PROMPT_MUST = [
   'docs/agent-to-webapp/port-brief.md',
   'docs/agent-to-webapp/workflow.md',
   'create-next-app',
+  'shadcn', // 스택 고정: Next.js + Tailwind CSS + shadcn/ui. 스타일(색·모드)은 브리프 선택 절에 둔다(2026-09-23)
   'src/lib/workflow/',
   '3층 구조',
   'maxDuration',

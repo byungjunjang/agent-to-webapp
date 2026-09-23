@@ -24,8 +24,9 @@ export const HUMAN_CHECK = '확인·수정 화면';
 export const SIZE_KEYWORD = '파일 크기';
 export const BODY_LIMIT_MB = 4.5;
 export const SIZE_NEAR_BYTES = 3 * 1024 * 1024;
-export const DASHBOARD_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/contract.md', 'create-next-app', 'Supabase', '3층 구조', 'src/lib/data/'];
-export const SKILL_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/skill-spec.md', 'create-next-app', 'src/lib/workflow/', '3층 구조', 'maxDuration'];
+// 'shadcn': 스택 고정(Next.js + Tailwind CSS + shadcn/ui). 정식 PROMPT_MUST 와 같은 이유(2026-09-23).
+export const DASHBOARD_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/contract.md', 'create-next-app', 'shadcn', 'Supabase', '3층 구조', 'src/lib/data/'];
+export const SKILL_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/skill-spec.md', 'create-next-app', 'shadcn', 'src/lib/workflow/', '3층 구조', 'maxDuration'];
 
 // dir 아래에서 가장 큰 파일. 없으면 null.
 export function largestFile(dir) {

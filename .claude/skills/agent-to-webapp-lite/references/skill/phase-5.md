@@ -70,7 +70,8 @@ node $SKILL_DIR/scripts/check_lite.mjs 5
 
 ```
 docs/agent-to-webapp-lite/brief.md 와 docs/agent-to-webapp-lite/skill-spec.md 를 읽고 이 스킬을 Next.js 웹 앱으로 만들어줘.
-- 이 폴더에서 create-next-app 을 먼저 돌릴 것. docs/ 와 .git 은 그대로 둔다
+- 이 폴더에서 create-next-app 을 먼저 돌릴 것(TypeScript · Tailwind CSS · App Router · src/ 디렉터리). docs/ 와 .git 은 그대로 둔다
+- 화면 컴포넌트는 shadcn/ui 로 만들 것. npx shadcn@latest init 을 돌리고 쓰는 컴포넌트만 add 한다. Tailwind 유틸리티 밖에서 CSS 를 따로 짜지 말 것
 - skill-spec.md 의 입력·출력 스키마를 타입으로 그대로 옮기고, 파싱 함수는 src/lib/workflow/ 에 하나로 둘 것.
   프롬프트를 쓴다면 spec 의 원문·모델·최대 토큰·타임아웃을 그대로 쓴다
 - Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것

@@ -68,7 +68,8 @@ node $SKILL_DIR/scripts/check_lite.mjs 5
 
 ```
 docs/agent-to-webapp-lite/brief.md 와 docs/agent-to-webapp-lite/contract.md 를 읽고 이 데이터를 보는 대시보드를 Next.js 로 만들어줘.
-- 이 폴더에서 create-next-app 을 먼저 돌릴 것. docs/ 와 .git 은 그대로 둔다
+- 이 폴더에서 create-next-app 을 먼저 돌릴 것(TypeScript · Tailwind CSS · App Router · src/ 디렉터리). docs/ 와 .git 은 그대로 둔다
+- 화면 컴포넌트는 shadcn/ui 로 만들 것. npx shadcn@latest init 을 돌리고 쓰는 컴포넌트만 add 한다. Tailwind 유틸리티 밖에서 CSS 를 따로 짜지 말 것
 - 저장소는 Supabase 를 쓴다. contract.md 의 테이블·열·타입·유일 키 그대로 테이블을 만들고, 같은 키면 덮어쓰는 upsert 로 둔다
 - 브리프의 "3층 구조" 표대로 둘 것. 화면은 src/app/, 조회·집계는 src/lib/query/, 저장은 src/lib/data/.
   화면 파일에서 DB 를 직접 부르지 말 것

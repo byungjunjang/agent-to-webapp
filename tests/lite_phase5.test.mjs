@@ -153,9 +153,9 @@ test('skill 5단계: 큰 샘플 파일이면 파일 크기 안내를 요구한�
   assert.ok(r.notes.some(n => n.includes('MB')));
 });
 
-test('상수: 브리프 절 일곱씩, PROMPT_MUST 여섯씩', () => {
+test('상수: 브리프 절 일곱씩, PROMPT_MUST 일곱씩', () => {
   assert.equal(DASHBOARD_BRIEF_HEADINGS.length, 7);
   assert.equal(SKILL_BRIEF_HEADINGS.length, 7);
-  assert.equal(DASHBOARD_PROMPT_MUST.length, 6);
-  assert.equal(SKILL_PROMPT_MUST.length, 6);
+  assert.equal(DASHBOARD_PROMPT_MUST.length, 7);
+  assert.equal(SKILL_PROMPT_MUST.length, 7);
 });

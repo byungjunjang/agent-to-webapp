@@ -62,4 +62,4 @@ Protection, Vercel Authentication 또는 Password). URL 을 아는 누구나 학
 - [ ] 대상 프로젝트의 로컬 전용 파일(`CLAUDE.local.md` 블록, `settings.local.json` 훅·additionalDirectories)을 지웠다
 
 ## 스타일 (선택)
-<비워 두면 다음 세션이 기본 스타일로 만든다. 예: 라이트 모드 전용, 악센트 #2563EB, gradient·shadow 금지>
+<스택(Next.js + Tailwind CSS + shadcn/ui)은 프롬프트 5 가 정한다. 여기는 생김새만. 비워 두면 다음 세션이 shadcn/ui 기본 테마로 만든다. 예: 라이트 모드 전용, 악센트 #2563EB, gradient·shadow 금지>

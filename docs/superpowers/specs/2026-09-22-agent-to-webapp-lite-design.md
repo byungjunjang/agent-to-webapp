@@ -41,7 +41,7 @@
 | 18 | 브리프 절 | dashboard: `3층 구조`·`논의점`·`1 데이터 계약 요약`~`7 배포 후 검증`. skill: 정식 템플릿의 1·2·3·4·6·7 을 그대로, 5(외부 서비스)는 `- 없음` 허용 | dashboard 는 서버에서 Claude 를 부르지 않으므로 정식 1·2 절이 빈다. 대신 갱신 표시와 적재 경로가 필요하다 |
 | 19 | 배포 보호 | 두 모드 모두 6절에 `배포 보호` 가 없으면 실패. 논의하지 않는 고정 규칙 | 정식 §2-27 과 같은 이유이고 dashboard 는 더 무겁다 — 노출되는 것이 실행 권한이 아니라 데이터다 |
 | 20 | 3층 구조·논의점 | 두 모드의 브리프 맨 앞에 정식과 같은 `## 3층 구조` 표와 `## 논의점`(조건 걸릴 때만 최대 둘, 답은 `결정:`) | 정식 §2-27. 학습자가 자기 앱을 같은 틀로 본다 |
-| 21 | 다음 세션 프롬프트 | 5단계는 `$LITE/prompt.md` 에 코드 블록으로 남긴다. 게이트가 모드별 `PROMPT_MUST` 를 확인한다. 스타터 저장소를 전제하지 않고 `create-next-app` 부터 시작한다 | 정식 §2-24 |
+| 21 | 다음 세션 프롬프트 | 5단계는 `$LITE/prompt.md` 에 코드 블록으로 남긴다. 게이트가 모드별 `PROMPT_MUST` 를 확인한다. 스타터 저장소를 전제하지 않고 `create-next-app` 부터 시작한다. 스택은 정식 §2-9 와 같은 Next.js + Tailwind CSS + shadcn/ui 이고 `PROMPT_MUST` 가 `shadcn` 을 찾는다(2026-09-23) | 정식 §2-24 |
 | 22 | 설치 | `install.mjs` 가 `.claude/skills/` 아래 스킬을 모두 훑어 각각 `~/.claude/skills/<이름>/` 에 설치한다. `install(src, dest)` 시그니처와 `.env` 보존 규칙은 그대로 두고 `installAll` 을 얹는다 | 스킬이 둘이 되면 설치 절차가 둘로 갈라진다. 기존 테스트가 한 줄도 바뀌지 않는 범위에서 얹는다 |
 | 23 | 언어 | 학습자에게는 한국어. 학습자가 다른 언어로 쓰면 그 언어로 | 정식과 같다 |
 | 24 | 대상 무변경 | `$TARGET` 의 git 추적 파일을 건드리지 않는다. 훅도 설치하지 않는다 | lite 관찰은 도구 호출 기록이 필요 없다. dashboard 는 출력 파일만, skill 은 샘플 입출력만 본다 |
@@ -144,7 +144,7 @@ run-1 과 run-2 가 같은 절을 쓴다. 4단계 대조가 성립하는 이유�
 2. 행 수가 많을 때 — "행이 n건입니다. 기간 필터를 기본으로 걸까요?" 기본값: 최근 3개월
 
 `PROMPT_MUST`: `docs/agent-to-webapp-lite/brief.md` · `docs/agent-to-webapp-lite/contract.md` ·
-`create-next-app` · `Supabase` · `3층 구조` · `src/lib/data/`.
+`create-next-app` · `shadcn` · `Supabase` · `3층 구조` · `src/lib/data/`.
 
 ## 6. skill 모드
 
@@ -194,7 +194,7 @@ run-1 과 run-2 가 같은 절을 쓴다. 4단계 대조가 성립하는 이유�
 - 샘플 최대 파일이 3MB 이상이면 브리프에 `파일 크기` 안내 필수(정식 §2-27 과 같은 상한 4.5MB)
 
 `PROMPT_MUST`: `docs/agent-to-webapp-lite/brief.md` · `docs/agent-to-webapp-lite/skill-spec.md` ·
-`create-next-app` · `src/lib/workflow/` · `3층 구조` · `maxDuration`.
+`create-next-app` · `shadcn` · `src/lib/workflow/` · `3층 구조` · `maxDuration`.
 
 ## 7. 파일 구조
 
@@ -275,3 +275,4 @@ phase 문서는 정식처럼 자기 프롬프트를 안에 담고, 게이트가 
 - 2026-09-23 구현 완료: 13개 Task, TDD. 테스트 `tests/lite_*.test.mjs` 92건 + `install.test.mjs` 3건을 더해 저장소 전체 233건 통과.
   `install.mjs` 하나가 두 스킬을 같이 설치한다(§2-22). 정식 스킬은 `install.mjs` 외에 바뀌지 않았다.
   구현 중 고친 것: `checkPhase3` 에 run-1.schema.md 부재 가드(없으면 대조 불가를 알리고 멈춘다)
+- 2026-09-23 사용자 결정: 스택 고정 Next.js + Tailwind CSS + shadcn/ui(§2-21). 두 모드의 프롬프트 5 와 `PROMPT_MUST` 에 반영

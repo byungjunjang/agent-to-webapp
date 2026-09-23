@@ -40,7 +40,7 @@
 
 아래 "프롬프트 5" 를 `$A2W/prompt.md` 에 남긴다. 5단계는 이 파일로 끝난다. 터미널에만 보여 주면 스크롤에 묻히고, 다른 기기나
 다음 날의 새 세션에서는 찾을 수 없다. 형식은 아래와 같고, 코드 블록 안은 프롬프트 5 원문 그대로다. 게이트가 코드 블록에서
-`PROMPT_MUST`(브리프·workflow 경로, `create-next-app`, `src/lib/workflow/`, `3층 구조`, `maxDuration`)를 찾는다.
+`PROMPT_MUST`(브리프·workflow 경로, `create-next-app`, `shadcn`, `src/lib/workflow/`, `3층 구조`, `maxDuration`)를 찾는다.
 
 ````
 # 다음 세션 프롬프트: <이름>
@@ -84,7 +84,8 @@ node $SKILL_DIR/scripts/check_phase.mjs 5
 
 ```
 docs/agent-to-webapp/port-brief.md 와 docs/agent-to-webapp/workflow.md 를 읽고 이 워크플로우를 Next.js 웹 앱으로 만들어줘.
-- 이 폴더에서 create-next-app 을 먼저 돌릴 것. docs/ 와 .git 은 그대로 둔다
+- 이 폴더에서 create-next-app 을 먼저 돌릴 것(TypeScript · Tailwind CSS · App Router · src/ 디렉터리). docs/ 와 .git 은 그대로 둔다
+- 화면 컴포넌트는 shadcn/ui 로 만들 것. npx shadcn@latest init 을 돌리고 쓰는 컴포넌트만 add 한다. Tailwind 유틸리티 밖에서 CSS 를 따로 짜지 말 것
 - docs/agent-to-webapp/verify/steps/ 와 verify/lib/ 를 src/lib/workflow/ 로 복사해서 그대로 쓸 것. 로직을 다시 짜지 말 것.
   단계를 순서대로 부르고 Goto·Skip·NeedsAttention 을 처리하는 부분은 verify/run.ts 의 runPipeline 과 같게 서버 쪽에 옮긴다
 - Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
