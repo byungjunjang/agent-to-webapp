@@ -26,7 +26,7 @@ cp -rn "$SKILL_DIR/assets/verify-template/." "$A2W/verify/"
 $A2W/verify/
   run.ts            템플릿. 단계를 순서대로 부르고 out/ 에 단계별 JSON 과 summary.json 을 쓴다. 고치지 않는다
   lib/step.ts       템플릿. 단계 계약(Step, Goto, Skip, NeedsAttention, ctx). 고치지 않는다
-  lib/llm.ts        템플릿. callTool(도구 1개 강제, JSON 만), fileBlocks(PDF·이미지·텍스트). 고치지 않는다
+  lib/llm.ts        템플릿. callTool(도구 1개 호출, JSON 만), fileBlocks(PDF·이미지·텍스트). 고치지 않는다
   package.json      템플릿. 단계에 꼭 필요한 순수 JS 패키지만 dependencies 에 더한다
   .gitignore        템플릿. node_modules, .env (out/ 은 커밋한다. 재검증 증거이고 --from 이 읽는다)
   steps/index.ts    `steps: Step[]` 를 내보낸다. workflow.md 의 번호·이름·실행 주체 순서 그대로
@@ -45,7 +45,7 @@ $A2W/verify/
 - 건너뛰기(외부 서비스로 뺄 단계의 stub)는 `return new Skip(사유)`. 입력이 그대로 다음 단계로 간다
 - 멈춤은 `throw new NeedsAttention(단계, 사유, payload)`
 - 실행 주체가 사람인 단계는 사람이 넣었을 값을 코드가 넣고 `ctx.note(...)` 로 남긴다. 러너가 "자동 승인" 을 기록한다
-- LLM 단계는 `callTool({ step, system, content, tool })` 로 도구 1개를 강제해 JSON 만 받는다. 파일은 `fileBlocks(files)`
+- LLM 단계는 `callTool({ step, system, content, tool })` 로 도구 1개를 부르게 해 JSON 만 받는다. 파일은 `fileBlocks(files)`
 
 ### 프롬프트 4 — 재검증 스크립트
 
@@ -58,7 +58,7 @@ report 절 이름(`## 모델`, `## 입력 N`, `## 재검증 중 고친 것`, `##
 - steps/index.ts 가 `steps: Step[]` 를 내보낸다. workflow.md 의 번호·이름·실행 주체 그대로, 순서대로. 단계마다 steps/<nn>-<이름>.ts 에 함수 하나
 - 단계 함수는 (input, ctx) 를 받아 출력을 돌려준다. 되돌아가기는 new Goto(단계, 사유), 건너뛰기는 new Skip(사유), 멈춤은 throw new NeedsAttention(단계, 사유)
 - 단계 사이에 넘기는 데이터는 workflow.md 의 JSON 스키마를 그대로 쓸 것
-- LLM 단계는 lib/llm.ts 의 callTool 로 도구 1개를 강제해 JSON 만 받는다. 파일은 fileBlocks 로 넘긴다. 모델은 환경변수 A2W_MODEL, 없으면 claude-sonnet-5
+- LLM 단계는 lib/llm.ts 의 callTool 로 도구 1개를 부르게 해 JSON 만 받는다. 파일은 fileBlocks 로 넘긴다. 모델은 환경변수 A2W_MODEL, 없으면 claude-sonnet-5
 - 실행 주체가 "사람" 인 단계는 사람이 넣었을 값을 코드가 넣고 ctx.note 로 남긴다(자동 승인)
 - 의존은 @anthropic-ai/sdk 와 그 단계에 꼭 필요한 순수 JS 패키지만 package.json 에 더한다. Vercel 서버리스에서 안 도는 것(네이티브 바이너리, 브라우저 자동화, Python, child_process)은 금지. TS 로 안 되는 단계는 Skip 으로 두고 report 의 "## 외부 서비스로 뺄 단계" 에 적을 것
 - Node 24 에서 node run.ts 로 바로 실행된다. tsx 나 빌드 없음. import 는 .ts 확장자까지 쓴다. 웹 앱 뼈대는 만들지 말 것

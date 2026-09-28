@@ -2,7 +2,7 @@
 // Claude Code 의 settings `model` 은 별칭을 그대로 받고, Anthropic SDK 는 전체 ID 가 필요하다.
 export const MODEL_ALIASES = {
   sonnet: 'claude-sonnet-5',
-  opus: 'claude-opus-5',
+  opus: 'claude-opus-5-5',
   haiku: 'claude-haiku-4-5-20251001',
 };
 // 웹 앱이 쓸 모델로 관찰한다. 재검증(A2W_MODEL 기본값)과 같아서 4단계 비교에 모델 차이가 끼지 않는다.

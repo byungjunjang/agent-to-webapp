@@ -1,4 +1,6 @@
-// Anthropic 호출을 한 곳에 모은다. LLM 단계는 도구 1개를 강제해 JSON 만 받는다.
+// Anthropic 호출을 한 곳에 모은다. LLM 단계는 도구 1개를 부르게 해 JSON 만 받는다.
+// tool_choice 로 강제하지 않는다. Claude Opus 5.5·Fable 5.1 은 tool_choice tool·any 에 400 을 낸다.
+// auto + 프롬프트 지시로 부르게 하고, 안 부르면 callTool 이 다시 묻는다.
 // API 키는 SDK 가 환경변수 ANTHROPIC_API_KEY 에서 읽는다(node --env-file-if-exists 로 주입). 코드는 키를 만지지 않는다.
 // 스킬 자산(assets/verify-template)에서 복사된다. 고치지 않는다.
 import { MODEL, usageLog } from './step.ts';
@@ -85,23 +87,31 @@ export interface CallToolOptions {
   retries?: number;
 }
 
-/** 도구 1개를 강제 호출해 그 input 을 돌려준다. API 오류는 그대로 던진다(SDK 가 429·5xx 는 스스로 재시도한다). */
+/** messages.create 에 넘길 요청. 순수 함수라 테스트가 모양을 확인한다. */
+export function buildRequest(opts: CallToolOptions, content: Block[], model: string, maxTokens: number): Record<string, unknown> {
+  return {
+    model,
+    max_tokens: maxTokens,
+    system: `${opts.system}
+
+답은 도구 ${opts.tool.name} 을 한 번 호출해 그 입력으로만 낸다. 도구 밖에 글을 쓰지 않는다.`,
+    messages: [{ role: 'user', content }],
+    tools: [opts.tool],
+    tool_choice: { type: 'auto', disable_parallel_tool_use: true },
+  };
+}
+
+/** 도구 1개를 부르게 해 그 input 을 돌려준다. API 오류는 그대로 던진다(SDK 가 429·5xx 는 스스로 재시도한다). */
 export async function callTool<T>(opts: CallToolOptions): Promise<T> {
   const retries = opts.retries ?? 1;
-  const maxTokens = opts.max_tokens ?? 4096;
+  // 최신 모델은 생각이 켜져 있고 생각 토큰도 max_tokens 에 든다. 4096 이면 도구 입력 전에 잘릴 수 있다.
+  const maxTokens = opts.max_tokens ?? 16000;
   const model = opts.model ?? MODEL;
   const content: Block[] = typeof opts.content === 'string' ? [{ type: 'text', text: opts.content }] : [...opts.content];
   let lastError: LlmOutputError | null = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const started = Date.now();
-    const res = await (await getClient()).messages.create({
-      model,
-      max_tokens: maxTokens,
-      system: opts.system,
-      messages: [{ role: 'user', content }],
-      tools: [opts.tool],
-      tool_choice: { type: 'tool', name: opts.tool.name },
-    });
+    const res = await (await getClient()).messages.create(buildRequest(opts, content, model, maxTokens));
     const entry: UsageEntry = {
       step: attempt === 0 ? opts.step : `${opts.step}#재시도${attempt}`,
       model: res.model,
@@ -112,7 +122,8 @@ export async function callTool<T>(opts: CallToolOptions): Promise<T> {
     };
     usageLog.push(entry);
     const block = res.content.find((b: any) => b.type === 'tool_use');
-    if (res.stop_reason === 'max_tokens') lastError = new LlmOutputError(`출력이 max_tokens(${maxTokens}) 에서 잘렸다`);
+    if (res.stop_reason === 'refusal') lastError = new LlmOutputError('모델이 요청을 거절했다 (stop_reason=refusal)');
+    else if (res.stop_reason === 'max_tokens') lastError = new LlmOutputError(`출력이 max_tokens(${maxTokens}) 에서 잘렸다`);
     else if (!block) lastError = new LlmOutputError(`도구 호출이 없다 (stop_reason=${res.stop_reason})`);
     else {
       const required = Array.isArray(opts.tool.input_schema.required) ? (opts.tool.input_schema.required as string[]) : [];

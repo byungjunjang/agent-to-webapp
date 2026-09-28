@@ -135,3 +135,14 @@ test('lib/llm.ts: SDK 없이 불러지고 unwrapStringified·fileBlocks 가 순�
   assert.equal(blocks.filter(b => b.type === 'image').length, 1);
   assert.ok(blocks.some(b => b.type === 'text' && b.text.includes('b.md') && b.text.includes('# t')));
 });
+
+test('lib/llm.ts: 요청은 도구 호출을 강제하지 않는다(Opus 5.5·Fable 5.1 은 tool_choice tool·any 에 400)', async () => {
+  const { buildRequest } = await import(pathToFileURL(join(TEMPLATE, 'lib', 'llm.ts')).href);
+  const tool = { name: 'emit', description: 'd', input_schema: { type: 'object', properties: {}, required: [] } };
+  const req = buildRequest({ step: '1', system: 'S', content: 'x', tool }, [{ type: 'text', text: 'x' }], 'claude-opus-5-5', 16000);
+  assert.deepEqual(req.tool_choice, { type: 'auto', disable_parallel_tool_use: true });
+  assert.ok(req.system.startsWith('S') && req.system.includes('emit'), '시스템 프롬프트가 도구 이름을 짚어 호출을 지시한다');
+  assert.deepEqual(req.tools, [tool]);
+  assert.equal(req.model, 'claude-opus-5-5');
+  assert.ok(!('thinking' in req) && !('temperature' in req), '최신 모델이 400 을 내는 thinking·temperature 는 보내지 않는다');
+});
