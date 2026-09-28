@@ -56,7 +56,8 @@ node $SKILL_DIR/scripts/check_lite.mjs 5
 
 일곱 절과 `## 3층 구조`·`## 논의점`, 2절의 `maxDuration`, 3절의 `Supabase`/`DB 없음`, 4절의
 `확인·수정 화면`(판정이 `Claude 호출 유지` 일 때), 6절의 `배포 보호`, 논의점 항목마다 `결정:`,
-샘플 최대 파일 크기, prompt.md 코드 블록의 고정 문자열을 본다.
+샘플 최대 파일 크기, prompt.md 코드 블록의 고정 문자열을 본다. 3절은 첫 줄만 본다. 판정은 STATUS 의 `verdict`
+(2단계 `--override` 반영)를 따른다. 틀의 `<…>` 자리 표시가 하나라도 그대로 남아 있으면 실패한다(`## 스타일 (선택)` 은 빼고).
 
 ## 4. 다음 세션
 
@@ -74,7 +75,7 @@ docs/agent-to-webapp-lite/brief.md 와 docs/agent-to-webapp-lite/skill-spec.md �
 - 화면 컴포넌트는 shadcn/ui 로 만들 것. npx shadcn@latest init 을 돌리고 쓰는 컴포넌트만 add 한다. Tailwind 유틸리티 밖에서 CSS 를 따로 짜지 말 것
 - skill-spec.md 의 입력·출력 스키마를 타입으로 그대로 옮기고, 파싱 함수는 src/lib/workflow/ 에 하나로 둘 것.
   프롬프트를 쓴다면 spec 의 원문·모델·최대 토큰·타임아웃을 그대로 쓴다
-- Claude 를 부르는 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
+- Claude 를 부른다면(판정이 Claude 호출 유지) 그 코드와 API 키는 서버 쪽(Route Handler 또는 Server Action)에만 둘 것
 - 파싱하는 Route Handler 에 export const maxDuration 을 브리프 2절의 값으로 둘 것. 기본 제한은 최대치보다 짧다
 - 브리프의 "3층 구조" 표대로 둘 것. 화면은 src/app/, 처리는 src/lib/workflow/, 저장은 src/lib/data/
 - 파일은 multipart 로 올릴 것(JSON 에 base64 로 담으면 1.33배 커진다). 상한을 넘으면 올리기 전에 거절 문구를 보여준다

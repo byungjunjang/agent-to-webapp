@@ -1,10 +1,12 @@
 // 5단계 전환 게이트. 브리프의 3층 구조·논의점·일곱 절과 모드별 고정 문자열, 다음 세션용 prompt.md.
 // dashboard 의 교차 검사: 계약의 제외 열 이름이 화면·필터 절에 나타나면 실패한다. 이 모드의 진짜 사고다.
+// 틀을 복사만 한 브리프를 막는다: 틀의 <…> 자리 표시가 그대로 남아 있으면 실패. 키워드 검사는 자리 표시 안의
+// 낱말로도 채워지기 때문이다.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { normalize, sectionBody, isBlank } from './md.mjs';
-import { parseVerdict, VERDICT_FILE, SKILL_VERDICTS } from './phase2.mjs';
-import { excludedColumns, CONTRACT_FILE, CONTRACT_TABLE, CONTRACT_KEY } from './phase3.mjs';
+import { excludedColumns, resolveSkillVerdict, UNKNOWN_VERDICT, CONTRACT_FILE, CONTRACT_TABLE, CONTRACT_KEY } from './phase3.mjs';
 import { sampleDir } from './phase1.mjs';
 import { DEFAULT_SAMPLES } from './status.mjs';
 
@@ -27,6 +29,34 @@ export const SIZE_NEAR_BYTES = 3 * 1024 * 1024;
 // 'shadcn': 스택 고정(Next.js + Tailwind CSS + shadcn/ui). 정식 PROMPT_MUST 와 같은 이유(2026-09-23).
 export const DASHBOARD_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/contract.md', 'create-next-app', 'shadcn', 'Supabase', '3층 구조', 'src/lib/data/'];
 export const SKILL_PROMPT_MUST = ['docs/agent-to-webapp-lite/brief.md', 'docs/agent-to-webapp-lite/skill-spec.md', 'create-next-app', 'shadcn', 'src/lib/workflow/', '3층 구조', 'maxDuration'];
+
+export const REFERENCES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'references');
+export const templateFile = (mode) => join(REFERENCES_DIR, `brief-template-${mode}.md`);
+// 이 절은 선택이라 자리 표시를 남겨도 된다(비우면 기본 테마)
+export const OPTIONAL_HEADING = '## 스타일';
+const PLACEHOLDER = /<[^<>]+>/g;
+
+// 틀의 자리 표시 목록(선택 절 제외). 틀이 없으면 null.
+export function templatePlaceholders(mode) {
+  const p = templateFile(mode);
+  if (!existsSync(p)) return null;
+  const text = normalize(readFileSync(p, 'utf8'));
+  const cut = text.indexOf(`\n${OPTIONAL_HEADING}`);
+  return [...new Set((cut === -1 ? text : text.slice(0, cut)).match(PLACEHOLDER) ?? [])];
+}
+
+// 첫 줄(빈 줄 제외). 목록 기호를 뗀다.
+function firstLine(body) {
+  const l = (body ?? '').split('\n').map(x => x.trim()).find(Boolean) ?? '';
+  return l.replace(/^[-*]\s+/, '');
+}
+
+// '유일 키' 값 → 열 이름 집합. 백틱·굵게·괄호 설명을 떼고 + 또는 , 로 나눈다.
+export function keyColumns(value) {
+  return value.replace(/[`*]/g, '').replace(/\([^)]*\)/g, '')
+    .split(/[+,]/).map(x => x.trim().replace(/[.。]$/, '')).filter(Boolean).sort();
+}
+const sameKey = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 // dir 아래에서 가장 큰 파일. 없으면 null.
 export function largestFile(dir) {
@@ -81,7 +111,20 @@ function checkPrompt(liteDir, must, errors) {
   for (const m of must) if (!block[1].includes(m)) errors.push(`${PROMPT_FILE}: 코드 블록에 '${m}' 가 없다 (프롬프트 5 원문을 그대로 넣는다)`);
 }
 
-export function checkPhase5(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
+function checkPlaceholders(text, mode, errors, warnings) {
+  const tokens = templatePlaceholders(mode);
+  if (tokens === null) { warnings.push(`브리프 틀(${templateFile(mode)})이 없어 자리 표시 검사를 건너뛰었다`); return; }
+  const flat = normalize(text);
+  const cut = flat.indexOf(`\n${OPTIONAL_HEADING}`);
+  const body = cut === -1 ? flat : flat.slice(0, cut);
+  const left = tokens.filter(t => body.includes(t));
+  if (left.length) {
+    const show = left.map(t => (t.length > 32 ? `${t.slice(0, 30).replace(/\n/g, ' ')}…>` : t));
+    errors.push(`${BRIEF_FILE}: 틀의 자리 표시가 그대로 남았다(${left.length}개): ${show.join(', ')}. 이 앱의 값으로 채운다`);
+  }
+}
+
+export function checkPhase5(liteDir, { mode, samples = DEFAULT_SAMPLES, verdict: given = null } = {}) {
   const errors = [];
   const warnings = [];
   const notes = [];
@@ -89,6 +132,7 @@ export function checkPhase5(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
   if (!existsSync(p)) return { ok: false, errors: [`${BRIEF_FILE} 없음`], warnings, notes };
   const text = readFileSync(p, 'utf8');
   const headings = mode === 'dashboard' ? DASHBOARD_BRIEF_HEADINGS : SKILL_BRIEF_HEADINGS;
+  checkPlaceholders(text, mode, errors, warnings);
   checkCommon(text, headings, errors);
 
   if (mode === 'dashboard') {
@@ -98,11 +142,18 @@ export function checkPhase5(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
     const cp = join(liteDir, CONTRACT_FILE);
     if (existsSync(cp)) {
       const contract = readFileSync(cp, 'utf8');
-      const table = (sectionBody(contract, CONTRACT_TABLE) ?? '').trim();
-      const key = (sectionBody(contract, CONTRACT_KEY) ?? '').trim();
+      // 계약은 '- channel + sold_on' 처럼 목록으로, 브리프는 '- 유일 키: channel + sold_on' 로 적는다.
+      // 절 전체 문자열이 아니라 값(테이블 이름·키 열 집합)을 비교한다
+      const table = firstLine(sectionBody(contract, CONTRACT_TABLE)).replace(/[`*]/g, '').trim();
+      const key = keyColumns(firstLine(sectionBody(contract, CONTRACT_KEY)).replace(/^유일 키\s*:?\s*/, ''));
       const summary = sectionBody(text, headings[0]) ?? '';
       if (table && !summary.includes(table)) errors.push(`${BRIEF_FILE}: '${headings[0]}' 에 계약의 테이블 이름 '${table}' 이 없다`);
-      if (key && !summary.includes(key)) errors.push(`${BRIEF_FILE}: '${headings[0]}' 에 계약의 유일 키 '${key}' 가 없다`);
+      if (key.length) {
+        const line = summary.split('\n').find(l => l.includes('유일 키'));
+        const got = line ? keyColumns(line.slice(line.indexOf('유일 키') + '유일 키'.length).replace(/^\s*:?\s*/, '')) : [];
+        if (!line) errors.push(`${BRIEF_FILE}: '${headings[0]}' 에 '유일 키' 줄이 없다. 계약의 유일 키 '${key.join(' + ')}' 를 그대로 적는다`);
+        else if (!sameKey(got, key)) errors.push(`${BRIEF_FILE}: '${headings[0]}' 의 유일 키(${got.join(' + ') || '비었음'})가 계약의 유일 키(${key.join(' + ')})와 다르다`);
+      }
       // 제외 열이 화면·필터로 새어 나가는지 본다
       const exposed = [sectionBody(text, headings[1]) ?? '', sectionBody(text, headings[2]) ?? ''].join('\n');
       for (const name of excludedColumns(contract)) {
@@ -113,11 +164,12 @@ export function checkPhase5(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
   } else {
     const split = sectionBody(text, headings[1]) ?? '';
     if (!split.includes(DURATION_KEYWORD)) errors.push(`${BRIEF_FILE}: '${headings[1]}' 절에 '${DURATION_KEYWORD} = <초>' 가 없다. 기본 제한은 최대치보다 짧다`);
-    const state = sectionBody(text, headings[2]) ?? '';
-    if (!STATE_KEYWORDS.some(k => state.includes(k))) errors.push(`${BRIEF_FILE}: '${headings[2]}' 절에 '${STATE_KEYWORDS.join("' 또는 '")}' 이 명시돼야 한다`);
+    // 첫 줄만 본다. 틀의 설명 줄(판단 근거)에도 'Supabase' 가 있어 절 전체로 보면 늘 통과한다
+    const state = firstLine(sectionBody(text, headings[2]));
+    if (!STATE_KEYWORDS.some(k => state.includes(k))) errors.push(`${BRIEF_FILE}: '${headings[2]}' 절 첫 줄에 '${STATE_KEYWORDS.join("' 또는 '")}' 이 명시돼야 한다`);
 
-    const vp = join(liteDir, VERDICT_FILE);
-    const verdict = existsSync(vp) ? parseVerdict(readFileSync(vp, 'utf8'), SKILL_VERDICTS) : null;
+    const verdict = resolveSkillVerdict(liteDir, given);
+    if (!verdict) errors.push(UNKNOWN_VERDICT);
     const human = sectionBody(text, headings[3]) ?? '';
     if (verdict === 'Claude 호출 유지' && !human.includes(HUMAN_CHECK)) {
       errors.push(`${BRIEF_FILE}: 판정이 'Claude 호출 유지' 면 '${headings[3]}' 절에 '${HUMAN_CHECK}' 이 있어야 한다. LLM 결과를 확인 없이 확정하지 않는다`);

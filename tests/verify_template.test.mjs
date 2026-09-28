@@ -13,7 +13,8 @@ test('verify-template: 러너·라이브러리·package.json·.gitignore 가 있
   for (const f of ['run.ts', 'lib/step.ts', 'lib/llm.ts', 'package.json', '.gitignore']) assert.ok(existsSync(join(TEMPLATE, f)), f);
   const pkg = JSON.parse(readFileSync(join(TEMPLATE, 'package.json'), 'utf8'));
   assert.equal(pkg.type, 'module');
-  assert.ok(pkg.dependencies['@anthropic-ai/sdk']);
+  // latest 는 설치 때마다 다른 SDK 를 받아 4단계 재검증이 재현되지 않는다. 캐럿 범위로 고정(2026-09-28)
+  assert.match(pkg.dependencies['@anthropic-ai/sdk'], /^\^\d+\.\d+\.\d+$/);
   const gi = readFileSync(join(TEMPLATE, '.gitignore'), 'utf8').split(/\r?\n/);
   assert.ok(gi.includes('node_modules') && gi.includes('.env'));
   assert.ok(!existsSync(join(TEMPLATE, 'steps', 'index.ts')), 'steps/index.ts 는 LLM 이 쓴다');

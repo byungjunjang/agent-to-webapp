@@ -15,9 +15,31 @@ export const MAX_RESPONSE = 200;
 export const INPUT_KEYS = ['file_path', 'notebook_path', 'path', 'pattern', 'glob', 'command', 'skill', 'args', 'description', 'subagent_type', 'url'];
 // 기록은 작업 폴더 repo 로 커밋된다. API 키 모양 문자열은 남기지 않는다.
 export const KEY_PATTERN = /sk-ant-[A-Za-z0-9_-]+/g;
+// 그 밖의 흔한 비밀 모양(2026-09-28). 값만 [REDACTED] 로 바꾸고 앞뒤 글자는 둔다.
+export const REDACTED = '[REDACTED]';
+export const TOKEN_PATTERNS = [
+  [/\bsk-(?!ant-)[A-Za-z0-9_-]{20,}/g, 'sk-***'],
+  [/\bgh[pousr]_[A-Za-z0-9]{20,}/g, REDACTED],
+  [/\bgithub_pat_[A-Za-z0-9_]{20,}/g, REDACTED],
+  [/\bxox[abposr]-[A-Za-z0-9-]{10,}/g, REDACTED],
+  [/\bAKIA[0-9A-Z]{16}\b/g, REDACTED],
+  [/\b(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/g, `$1${REDACTED}`],
+];
+// 이름이 KEY·TOKEN·SECRET·PASSWORD·PASSWD·PWD 로 끝나는 값. NAME=value / name: value / "name":"value"(JSON 문자열화 안이면 \" 도).
+const SECRET_NAME = String.raw`[A-Za-z0-9_.-]*?(?:key|token|secret|password|passwd|pwd)s?`;
+const JSON_ASSIGN = new RegExp(String.raw`(\\?"${SECRET_NAME}\\?"\s*:\s*\\?")((?:[^"\\]|\\[^"])*)(?=\\?")`, 'gi');
+const EQ_ASSIGN = new RegExp(String.raw`\b(${SECRET_NAME}=(?:\\?["'])?)([^\s"'\\,;&|}]+)`, 'gi');
+const COLON_ASSIGN = new RegExp(String.raw`\b(${SECRET_NAME}:[ \t]+(?:\\?["'])?)([^\s"'\\,;&|}]+)`, 'gi');
+const masked = (v) => v.includes('***') || v === REDACTED;
 
 export function redact(s) {
-  return typeof s === 'string' ? s.replace(KEY_PATTERN, 'sk-ant-***') : s;
+  if (typeof s !== 'string') return s;
+  let t = s.replace(KEY_PATTERN, 'sk-ant-***');
+  for (const [re, to] of TOKEN_PATTERNS) t = t.replace(re, to);
+  for (const re of [JSON_ASSIGN, EQ_ASSIGN, COLON_ASSIGN]) {
+    t = t.replace(re, (m, head, value) => (masked(value) ? m : `${head}${REDACTED}`));
+  }
+  return t;
 }
 
 export function truncate(v, max = MAX_FIELD) {

@@ -203,3 +203,19 @@ test('phase3: 되돌아가기·건너뛰기가 걸린 코드 단계 쌍과 코�
   const mixed = `${flow('S1(["1 a"]) --> S2["2 b"] --> S3{{"3 c"}}', 'class S1 llm', 'class S2 code', 'class S3 human')}${STEP(1, 'a')}${REF_STEP(2, 'b', '단계 1 출력과 같음', '공통 스키마 Specs')}${REF_STEP(3, 'c', '단계 2 출력과 같음', '입력과 같음', '사람')}## 규칙화 불가\n- 없음\n${SIMPLIFY}`;
   assert.ok(!checkPhase3(app(mixed)).warnings.some(w => w.includes('분기 없이')));
 });
+
+// 조건부 판정(override 포함)이면 조건을 흐름도 다음 '## 조건' 에 적는다. 판정은 STATUS verdict, 없으면 verdict.md 에서 읽는다.
+test('phase3: 판정이 조건부면 ## 조건 절이 있어야 한다', () => {
+  const r = checkPhase3(app(GOOD), { verdict: '조건부 고정 가능' });
+  assert.ok(r.errors.some(e => e.includes('## 조건')), r.errors.join('\n'));
+  const withCond = GOOD.replace('## 단계\n', '## 조건\n- 관찰 1회, 미관찰 분기: 재견적\n## 단계\n');
+  assert.deepEqual(checkPhase3(app(withCond), { verdict: '조건부 고정 가능' }).errors, []);
+  assert.deepEqual(checkPhase3(app(GOOD), { verdict: '고정 가능' }).errors, []);
+});
+
+test('phase3: STATUS verdict 가 없는 옛 작업은 verdict.md 의 판정 줄로 본다', () => {
+  const d = app(GOOD);
+  write(d, 'verdict.md', '판정: 조건부 고정 가능(관찰 1회)\n');
+  assert.ok(checkPhase3(d).errors.some(e => e.includes('## 조건')));
+  assert.deepEqual(checkPhase3(d, { verdict: '고정 가능' }).errors, []);
+});

@@ -1,4 +1,4 @@
-// 1단계 관찰 게이트: run 3개 + 헤딩, 입력 3개 + README, 훅 기록 짝짓기, 도구 호출 색인.
+// 1단계 관찰 게이트: run N개 + 헤딩, 입력 폴더 N개 + README, 훅 기록 짝짓기, 도구 호출 색인.
 import { readdirSync, readFileSync, writeFileSync, existsSync, renameSync, rmdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { hasHeading } from './md.mjs';
@@ -35,10 +35,14 @@ export function checkPhase1(a2wDir, { runs = MIN_RUNS } = {}) {
   if (!existsSync(inputsDir)) {
     errors.push('runs/inputs/ 폴더가 없다');
   } else {
-    const entries = readdirSync(inputsDir);
-    if (!entries.includes('README.md')) errors.push('runs/inputs/README.md 없음 (왜 이 셋인지)');
-    const inputs = entries.filter(e => e !== 'README.md');
+    const entries = readdirSync(inputsDir, { withFileTypes: true });
+    if (!entries.some(e => e.name === 'README.md')) errors.push('runs/inputs/README.md 없음 (왜 이 셋인지)');
+    // 입력 하나는 폴더 하나(<N>-<이름>/). 4단계 러너·게이트도 폴더만 입력으로 센다
+    const rest = entries.filter(e => !/^README/i.test(e.name));
+    const inputs = rest.filter(e => e.isDirectory());
+    const loose = rest.filter(e => !e.isDirectory()).map(e => e.name);
     if (inputs.length < runs) errors.push(`입력이 ${inputs.length}개. ${runs}개 이상 필요`);
+    if (loose.length) errors.push(`runs/inputs/ 에 폴더가 아닌 파일이 있다: ${loose.join(', ')}. 입력 하나는 폴더 하나(<N>-<이름>/)다. 파일을 그 안으로 옮긴다`);
   }
 
   warnings.push(...pairToolLogs(runsDir, runFiles));

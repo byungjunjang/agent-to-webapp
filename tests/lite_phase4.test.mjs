@@ -43,6 +43,16 @@ test('dashboard 4단계: 두 관찰이 같으면 통과', () => {
   assert.deepEqual(r.breaking, []);
 });
 
+test('dashboard 4단계: 통과하면 조건부 판정을 고정 가능으로 확정해 돌려준다. 실패면 확정하지 않는다', () => {
+  const app = makeApp('a2wl-p4-');
+  dashFixture(app);
+  assert.equal(checkPhase4(lite(app), { mode: 'dashboard', verdict: '조건부 고정 가능' }).verdict, '고정 가능');
+  assert.equal(checkPhase4(lite(app), { mode: 'dashboard' }).verdict, null);
+  const bad = makeApp('a2wl-p4-');
+  dashFixture(bad, { rep: report({ dup: '3건' }) });
+  assert.equal(checkPhase4(lite(bad), { mode: 'dashboard', verdict: '조건부 고정 가능' }).verdict, null);
+});
+
 test('dashboard 4단계: 계약 열이 사라지면 실패', () => {
   const app = makeApp('a2wl-p4-');
   dashFixture(app, { run2: BASE.slice(0, 2), rep: report({ body: 'revenue 열이 사라졌다' }) });

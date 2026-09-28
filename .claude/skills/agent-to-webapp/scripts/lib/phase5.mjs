@@ -1,7 +1,10 @@
 // 5단계 전환 게이트: port-brief.md 의 3층 구조·논의점·일곱 절, 입력 파일 크기, 다음 세션에 붙여넣을 prompt.md.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { normalize, sectionBody, isBlank } from './md.mjs';
+import { finalVerdict, isConditional } from './phase2.mjs';
+import { CONDITION_HEADING } from './phase3.mjs';
 
 export const BRIEF_HEADINGS = [
   '## 1. 서버 쪽 호출',
@@ -40,6 +43,14 @@ export const PROTECTION = '배포 보호';
 export const BODY_LIMIT_MB = 4.5;
 export const SIZE_NEAR_BYTES = 3 * 1024 * 1024;
 export const SIZE_KEYWORD = '파일 크기';
+// 틀의 자리표시자(<…>) 안에 게이트가 찾는 낱말이 들어 있어 틀을 그대로 복사해도 통과했다. 틀에 있는 자리표시자가
+// 브리프에 글자 그대로 남아 있으면 실패다. 틀은 실행 때 읽는다(2026-09-28).
+export const TEMPLATE_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'references', 'port-brief-template.md');
+export const PLACEHOLDER = /<[^<>\n]+>/g;
+
+export function templatePlaceholders(file = TEMPLATE_FILE) {
+  return existsSync(file) ? [...new Set(normalize(readFileSync(file, 'utf8')).match(PLACEHOLDER) ?? [])] : [];
+}
 
 // runs/inputs/ 아래에서 가장 큰 파일. 폴더가 없으면 null.
 export function largestInput(dir) {
@@ -59,13 +70,19 @@ export function largestInput(dir) {
   return best;
 }
 
-export function checkPhase5(a2wDir) {
+// verdict: STATUS 의 최종 판정. 조건부면 7절이 workflow.md 의 '## 조건' 을 배포 뒤에 확인해야 한다.
+export function checkPhase5(a2wDir, { verdict = null } = {}) {
   const errors = [];
   const warnings = [];
   const notes = [];
   const p = join(a2wDir, 'port-brief.md');
   if (!existsSync(p)) return { ok: false, errors: ['port-brief.md 없음'], warnings, notes };
   const text = readFileSync(p, 'utf8');
+
+  const leftover = templatePlaceholders().filter(ph => text.includes(ph));
+  if (leftover.length) {
+    errors.push(`port-brief.md: 틀의 자리표시자가 남아 있다(${leftover.length}개). 실제 값으로 바꾸거나 지운다: ${leftover.map(x => x.length > 40 ? `${x.slice(0, 40)}…>` : x).join(', ')}`);
+  }
 
   for (const h of BRIEF_HEADINGS) {
     const body = sectionBody(text, h);
@@ -103,6 +120,11 @@ export function checkPhase5(a2wDir) {
   const auth = sectionBody(text, BRIEF_HEADINGS[5]);
   if (auth !== null && !auth.includes(PROTECTION)) {
     errors.push(`port-brief.md: '${BRIEF_HEADINGS[5]}' 절에 'Vercel ${PROTECTION}를 켠다' 가 없다. URL 을 아는 누구나 API 키로 앱을 돌릴 수 있다`);
+  }
+
+  const check = sectionBody(text, BRIEF_HEADINGS[6]);
+  if (check !== null && isConditional(finalVerdict(a2wDir, verdict)) && !check.includes(CONDITION_HEADING)) {
+    errors.push(`port-brief.md: 판정이 조건부 고정 가능인데 '${BRIEF_HEADINGS[6]}' 절에 workflow.md '${CONDITION_HEADING}' 을 확인하는 항목이 없다. 조건마다 배포된 앱에서 볼 것을 적는다`);
   }
 
   const biggest = largestInput(join(a2wDir, 'runs', 'inputs'));

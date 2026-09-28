@@ -76,6 +76,16 @@ test('excludedColumns: 목록에서 이름만, 없음은 뺀다', () => {
   assert.deepEqual(excludedColumns(contract({ excluded: '- 없음' })), []);
 });
 
+test('excludedColumns: 띄어쓰기·하이픈이 든 이름을 자르지 않는다', () => {
+  assert.deepEqual(excludedColumns(contract({ excluded: '- 상담 원문\n- e-mail' })), ['상담 원문', 'e-mail']);
+  // 뒤에 붙는 사유는 뗀다: 괄호, ' — ', ' - ', ' · ', ':'
+  assert.deepEqual(
+    excludedColumns(contract({ excluded: '- memo (개인 메모)\n- account_no — 계좌\n- 상담 원문 - 원문\n- salary · 급여\n- 개인 이름: 실명' })),
+    ['memo', 'account_no', '상담 원문', 'salary', '개인 이름']);
+  // 백틱이 있으면 백틱 안이 이름이다
+  assert.deepEqual(excludedColumns(contract({ excluded: '- `상담 원문` 은 뺀다\n- **e-mail**' })), ['상담 원문', 'e-mail']);
+});
+
 // skill 모드
 function spec({ verdict = 'Claude 호출 유지', out = '{ "barcode": "문자열", "items": "배열" }', extra } = {}) {
   const head = ['## 입력 스키마', '', '```json', '{ "file": "PDF 한 건" }', '```', '',
@@ -135,6 +145,27 @@ test('skill 3단계: 입력 스키마 json 블록이 없으면 실패', () => {
   const r = checkPhase3(lite(app), { mode: 'skill', samples: 2 });
   assert.equal(r.ok, false);
   assert.ok(r.errors.some(e => e.includes('## 입력 스키마')));
+});
+
+test('skill 3단계: 판정은 opts.verdict(STATUS)가 verdict.md 보다 우선한다', () => {
+  const app = makeApp('a2wl-p3-');
+  skillFixture(app, { verdict: '고정 불가' });
+  write(app, `${LITE}/skill-spec.md`, spec({ verdict: '코드로 고정' }));
+  const r = checkPhase3(lite(app), { mode: 'skill', samples: 2, verdict: 'Claude 호출 유지' });
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some(e => e.includes('## 프롬프트')), r.errors.join(' / '));
+  assert.equal(r.verdict, 'Claude 호출 유지');
+});
+
+test('skill 3단계: 판정을 알 수 없으면 건너뛰지 않고 실패한다', () => {
+  const app = makeApp('a2wl-p3-');
+  skillFixture(app, { verdict: '고정 불가' });
+  write(app, `${LITE}/skill-spec.md`, spec());
+  const r = checkPhase3(lite(app), { mode: 'skill', samples: 2 });
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some(e => e.includes('판정')), r.errors.join(' / '));
+  write(app, `${LITE}/verdict.md`, '## 근거\n- x\n');
+  assert.equal(checkPhase3(lite(app), { mode: 'skill', samples: 2 }).ok, false);
 });
 
 test('상수: 계약 아홉 절, 스펙 네 절', () => {

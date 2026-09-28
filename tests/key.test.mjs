@@ -32,6 +32,21 @@ test('fileHasKey: 없는 파일·주석·빈 값은 false, export·따옴표·CR
   assert.equal(fileHasKey(join(d, 'b.env')), true);
 });
 
+// Node --env-file 과 같이 읽는다. 따옴표 없는 값의 ' #…' 는 주석이라 키가 아니다(2026-09-28 리뷰).
+test('fileHasKey: 따옴표 없는 값의 인라인 주석은 떼고, 따옴표 안은 그대로 본다', () => {
+  const d = skillDir();
+  write(d, 'c.env', 'ANTHROPIC_API_KEY= # 여기에 키\n');
+  assert.equal(fileHasKey(join(d, 'c.env')), false);
+  write(d, 'd.env', 'ANTHROPIC_API_KEY=#memo\n');
+  assert.equal(fileHasKey(join(d, 'd.env')), false);
+  write(d, 'e.env', 'ANTHROPIC_API_KEY=' + FAKE + ' # 개인 키\n');
+  assert.equal(fileHasKey(join(d, 'e.env')), true);
+  write(d, 'f.env', 'ANTHROPIC_API_KEY="" # 비어 있음\n');
+  assert.equal(fileHasKey(join(d, 'f.env')), false);
+  write(d, 'g.env', "ANTHROPIC_API_KEY='#not-comment'\n");
+  assert.equal(fileHasKey(join(d, 'g.env')), true);
+});
+
 test('findKey: 우선순위는 셸 환경변수 > 프로젝트 verify/.env > 스킬 .env', () => {
   const s = skillDir();
   const app = makeApp();

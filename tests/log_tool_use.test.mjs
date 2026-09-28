@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { makeApp } from './helpers.mjs';
-import { toRecord, truncate, appendRecord, compactInput, MAX_FIELD, MAX_INPUT, MAX_RESPONSE } from '../.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs';
+import { toRecord, truncate, redact, appendRecord, compactInput, MAX_FIELD, MAX_INPUT, MAX_RESPONSE } from '../.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs';
 
 const SCRIPT = resolve('.claude/skills/agent-to-webapp/scripts/log_tool_use.mjs');
 const CLAUDE_PAYLOAD = {
@@ -87,4 +87,40 @@ test('compactInput: 아는 키가 없으면 그대로, 객체가 아니면 그�
   assert.deepEqual(compactInput({ foo: 1, bar: 'b' }), { foo: 1, bar: 'b' });
   assert.equal(compactInput('str'), 'str');
   assert.deepEqual(compactInput({ skill: 'x', args: 'y', prompt: 'p'.repeat(100) }), { skill: 'x', args: 'y' });
+});
+
+// 기록은 작업 폴더 repo 로 커밋된다. sk-ant- 말고도 흔한 비밀 모양을 가린다(2026-09-28 리뷰). 테스트 값은 조각을 이어 만든다.
+test('redact: 흔한 토큰 모양과 KEY·TOKEN·SECRET·PASSWORD 이름의 값을 가린다', () => {
+  const A = (n) => 'A1b2'.repeat(n);
+  const cases = [
+    ['sk-' + 'proj-' + A(6), 'sk-'],
+    ['gh' + 'p_' + A(9), 'gh'],
+    ['gh' + 'o_' + A(9), 'gh'],
+    ['github' + '_pat_' + A(9), 'github'],
+    ['xox' + 'b-' + '1234-5678-' + A(4), 'xox'],
+    ['AKIA' + 'ABCDEFGHIJKLMNOP', 'AKIA'],
+  ];
+  for (const [secret] of cases) {
+    const out = redact(`curl -d ${secret} x`);
+    assert.ok(!out.includes(secret), out);
+    assert.ok(out.includes('[REDACTED]') || out.includes('sk-***'), out);
+  }
+  assert.equal(redact('curl -H "Authorization: Bearer ' + A(5) + '"'), 'curl -H "Authorization: Bearer [REDACTED]"');
+  assert.equal(redact('GITHUB_TOKEN=' + A(3) + ' npm publish'), 'GITHUB_TOKEN=[REDACTED] npm publish');
+  assert.equal(redact('db_password: hunter2'), 'db_password: [REDACTED]');
+  assert.equal(redact('{"client_secret":"' + A(2) + '","n":1}'), '{"client_secret":"[REDACTED]","n":1}');
+  assert.equal(redact('export PWD=/tmp/x'), 'export PWD=[REDACTED]');
+  // 가리지 않는 것: 이름만 나온 것, 이미 가린 sk-ant-
+  assert.equal(redact('echo $GITHUB_TOKEN'), 'echo $GITHUB_TOKEN');
+  assert.equal(redact('ls tokens/ && cat keyword.md'), 'ls tokens/ && cat keyword.md');
+  assert.equal(redact('ANTHROPIC_API_KEY=sk-ant-' + A(6)), 'ANTHROPIC_API_KEY=sk-ant-***');
+});
+
+test('toRecord: JSON 으로 문자열화한 입력 안의 비밀도 가리고 JSON 은 깨지지 않는다', () => {
+  const tok = 'gh' + 'p_' + 'Z9y8'.repeat(9);
+  const rec = toRecord({ session_id: 's', tool_name: 'Bash', tool_input: { command: `GH_TOKEN=${tok} gh pr list` }, tool_response: { password: 'p@ss w0rd' } });
+  assert.ok(!JSON.stringify(rec).includes(tok));
+  assert.ok(!rec.response.includes('p@ss'));
+  assert.equal(JSON.parse(rec.input).command, 'GH_TOKEN=[REDACTED] gh pr list');
+  assert.deepEqual(JSON.parse(rec.response), { password: '[REDACTED]' });
 });

@@ -66,3 +66,11 @@ export function checkPhase2(a2wDir, { override = null, runs = FULL_RUNS } = {}) 
   }
   return { ok: errors.length === 0, errors, warnings, verdict, agentRows };
 }
+
+// 3·5단계가 쓰는 최종 판정. STATUS 의 verdict(override 반영)가 있으면 그것, 없는 옛 작업이면 verdict.md 의 판정 줄.
+export function finalVerdict(a2wDir, verdict = null) {
+  if (verdict) return verdict;
+  const p = join(a2wDir, 'verdict.md');
+  return existsSync(p) ? parseVerdict(readFileSync(p, 'utf8')) : null;
+}
+export const isConditional = (v) => v === '조건부 고정 가능';

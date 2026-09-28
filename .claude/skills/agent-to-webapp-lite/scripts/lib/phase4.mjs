@@ -1,6 +1,8 @@
 // 4단계 재검증 게이트. 게이트가 직접 대조한다.
 //   dashboard: run-1 과 run-2 의 열 표를 계약과 대 본다. 깨지는 변경(계약 열 삭제·타입 변경·키 중복)은 실패.
 //   skill:     verify/sample-k.json N건이 있고 파싱되고 스펙의 출력 키를 채우는가. 값 차이는 학습자 몫.
+// dashboard 가 통과하면 2단계의 잠정 판정(조건부 고정 가능)을 고정 가능으로 확정해 verdict 로 돌려준다.
+// STATUS 에 쓰는 것은 check_lite.mjs 다.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { sectionBody, isBlank, normalize } from './md.mjs';
@@ -14,6 +16,8 @@ export const DASHBOARD_REPORT_HEADINGS = ['## 스키마 diff', '## 키 중복', 
 export const SKILL_REPORT_HEADINGS = ['## 스키마 일치율', '## 샘플별 차이', '## 사람 개입'];
 export const DUP_HEADING = '## 키 중복';
 export const NONE = '없음';
+export const PROVISIONAL_VERDICT = '조건부 고정 가능';
+export const CONFIRMED_VERDICT = '고정 가능';
 export const ROLLBACK_HINT = '계약을 고치려면 node check_lite.mjs rollback 3, 판정부터 다시 하려면 rollback 2';
 
 export const verifySample = (k) => join('verify', `sample-${k}.json`);
@@ -93,12 +97,14 @@ function checkSkill(liteDir, samples, errors, warnings, notes) {
   return breaking;
 }
 
-export function checkPhase4(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
+export function checkPhase4(liteDir, { mode, samples = DEFAULT_SAMPLES, verdict = null } = {}) {
   const errors = [];
   const warnings = [];
   const notes = [];
   const breaking = mode === 'dashboard'
     ? checkDashboard(liteDir, errors, warnings, notes)
     : checkSkill(liteDir, samples, errors, warnings, notes);
-  return { ok: errors.length === 0, errors, warnings, notes, breaking };
+  const ok = errors.length === 0;
+  const confirmed = ok && mode === 'dashboard' && verdict === PROVISIONAL_VERDICT ? CONFIRMED_VERDICT : null;
+  return { ok, errors, warnings, notes, breaking, verdict: confirmed };
 }

@@ -17,12 +17,18 @@ export function statusPath(appDir) {
   return join(appDir, LITE_DIR, STATUS_FILE);
 }
 
+// STATUS 는 줄 단위로 읽는다. 값에 줄바꿈·제어 문자가 들면 다른 줄(phase-N: passed …)을 지어낼 수 있다.
+export function isSafeValue(v) {
+  return typeof v === 'string' && !/[\u0000-\u001f\u007f]/.test(v);
+}
+
+// verdict: 2단계가 확정한 판정(--override 반영). 3·5단계가 verdict.md 를 다시 읽지 않고 이것을 쓴다.
 export function emptyStatus(target, mode, { output = null, skill = null, samples = DEFAULT_SAMPLES } = {}) {
-  return { target, mode, created: today(), output, skill, samples, phases: {}, terminated: null, log: [] };
+  return { target, mode, created: today(), output, skill, samples, verdict: null, phases: {}, terminated: null, log: [] };
 }
 
 export function parseStatus(text) {
-  const st = { target: null, mode: null, created: null, output: null, skill: null, samples: DEFAULT_SAMPLES, phases: {}, terminated: null, log: [] };
+  const st = { target: null, mode: null, created: null, output: null, skill: null, samples: DEFAULT_SAMPLES, verdict: null, phases: {}, terminated: null, log: [] };
   let inLog = false;
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
@@ -36,7 +42,7 @@ export function parseStatus(text) {
       if (pm) st.phases[Number(key.slice(6))] = { passed: pm[1], approved: Boolean(pm[2]) };
     } else if (key === 'terminated') {
       st.terminated = value || null;
-    } else if (key === 'target' || key === 'mode' || key === 'created' || key === 'output' || key === 'skill') {
+    } else if (key === 'target' || key === 'mode' || key === 'created' || key === 'output' || key === 'skill' || key === 'verdict') {
       st[key] = value || null;
     } else if (key === 'samples') {
       const n = Number(value);
@@ -47,11 +53,16 @@ export function parseStatus(text) {
 }
 
 export function formatStatus(st) {
+  for (const k of ['target', 'mode', 'output', 'skill', 'verdict', 'terminated']) {
+    if (st[k] != null && !isSafeValue(String(st[k]))) throw new Error(`STATUS 의 ${k} 값에 줄바꿈·제어 문자가 있다`);
+  }
+  for (const l of st.log) if (!isSafeValue(l)) throw new Error('STATUS 로그 줄에 줄바꿈·제어 문자가 있다');
   const lines = ['# agent-to-webapp-lite STATUS', '', `target: ${st.target}`, `mode: ${st.mode}`];
   // 모드에 해당하는 줄만 쓴다. 파서는 없는 줄을 기본값으로 읽는다.
   if (st.mode === 'dashboard') lines.push(`output: ${st.output ?? ''}`);
   if (st.mode === 'skill') lines.push(`skill: ${st.skill ?? ''}`, `samples: ${st.samples ?? DEFAULT_SAMPLES}`);
   lines.push(`created: ${st.created}`);
+  if (st.verdict) lines.push(`verdict: ${st.verdict}`);
   for (const n of [1, 2, 3, 4, 5]) {
     const p = st.phases[n];
     lines.push(p ? `phase-${n}: passed ${p.passed}${p.approved ? ' approved' : ''}` : `phase-${n}:`);

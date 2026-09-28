@@ -65,11 +65,14 @@ node $SKILL_DIR/scripts/check_phase.mjs 2
 
 ## 3. 판정별 갈림
 
+게이트는 통과한 판정(override 반영)을 STATUS 의 `verdict:` 에 적는다.
+
 - 고정 가능 / 조건부 → 3단계로
 - 고정 불가 → 게이트가 STATUS 에 종료를 적고 라우팅 안내를 출력한다. 그 안내를 학습자에게 그대로 전하고
-  멈춘다. 3단계 이후 파일을 만들지 않는다
+  멈춘다. 3단계 이후 파일을 만들지 않는다. 종료는 `rollback 1`·`rollback 2` 로만 풀린다(3 이상은 거부)
 
 ## 4. 사람이 판정을 뒤집을 때
 
 학습자가 사유를 대면 `node $SKILL_DIR/scripts/check_phase.mjs 2 --approve --override "<사유>"`. 판정은
-조건부 고정 가능으로 기록되고 사유가 STATUS log 에 남는다. 3단계 workflow.md 의 `## 조건` 에 그 사유를 적는다.
+STATUS 의 `verdict:` 에 조건부 고정 가능으로 기록되고 사유가 STATUS log 에 남는다. verdict.md 는 고치지 않는다.
+3·5단계 게이트는 verdict.md 가 아니라 STATUS 의 `verdict` 를 읽는다. 3단계 workflow.md 의 `## 조건` 에 그 사유를 적는다.

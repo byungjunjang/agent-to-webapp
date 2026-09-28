@@ -4,6 +4,6 @@
   "type": "module",
   "description": "agent-to-webapp 4단계 재검증. workflow.md 의 단계를 steps/ 의 함수로 구현한다",
   "dependencies": {
-    "@anthropic-ai/sdk": "latest"
+    "@anthropic-ai/sdk": "^0.128.0"
   }
 }

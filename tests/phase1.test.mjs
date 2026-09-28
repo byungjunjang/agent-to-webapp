@@ -12,7 +12,7 @@ function goodApp() {
   const app = makeApp();
   for (const n of [1, 2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
   write(app, `${A2W}/runs/inputs/README.md`, '# 왜 이 셋인가\n');
-  for (const f of ['easy.md', 'normal.md', 'edge.md']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  for (const f of ['1-easy', '2-normal', '3-edge']) write(app, `${A2W}/runs/inputs/${f}/in.md`, 'x');
   return app;
 }
 
@@ -37,7 +37,7 @@ test('phase1: run 2개면 실패, 헤딩 빠지면 실패', () => {
   write(app, `${A2W}/runs/run-1.md`, RUN);
   write(app, `${A2W}/runs/run-2.md`, '# run\n## 수행한 단계\n');
   write(app, `${A2W}/runs/inputs/README.md`, 'r');
-  for (const f of ['a', 'b', 'c']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  for (const f of ['1-a', '2-b', '3-c']) write(app, `${A2W}/runs/inputs/${f}/in.md`, 'x');
   const r = checkPhase1(join(app, A2W));
   assert.equal(r.ok, false);
   assert.ok(r.errors.some(e => e.includes('3개 이상')));
@@ -47,8 +47,8 @@ test('phase1: run 2개면 실패, 헤딩 빠지면 실패', () => {
 test('phase1: inputs README 없거나 입력 2개면 실패', () => {
   const app = makeApp();
   for (const n of [1, 2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
-  write(app, `${A2W}/runs/inputs/a`, 'x');
-  write(app, `${A2W}/runs/inputs/b`, 'x');
+  write(app, `${A2W}/runs/inputs/1-a/in.md`, 'x');
+  write(app, `${A2W}/runs/inputs/2-b/in.md`, 'x');
   const r = checkPhase1(join(app, A2W));
   assert.ok(r.errors.some(e => e.includes('README.md')));
   assert.ok(r.errors.some(e => e.includes('입력이 2개')));
@@ -138,7 +138,7 @@ test('phase1: runs 옵션이 요구 개수를 정하고 runCount 를 돌려준�
   const app = makeApp();
   write(app, `${A2W}/runs/run-1.md`, RUN);
   write(app, `${A2W}/runs/inputs/README.md`, 'r');
-  write(app, `${A2W}/runs/inputs/a`, 'x');
+  write(app, `${A2W}/runs/inputs/1-a/in.md`, 'x');
   assert.equal(checkPhase1(join(app, A2W)).ok, false);
   const r = checkPhase1(join(app, A2W), { runs: 1 });
   assert.deepEqual(r.errors, []);
@@ -169,4 +169,18 @@ test('pairToolLogs: 경로가 없는 기록은 남은 run 에 시각 순으로 �
   assert.ok(readFileSync(join(app, A2W, 'runs/run-1.tools.jsonl'), 'utf8').includes('whoami'), '남은 run-1·run-2 에 시각 순');
   assert.ok(readFileSync(join(app, A2W, 'runs/run-2.tools.jsonl'), 'utf8').includes('pwd'));
   assert.ok(r.warnings.some(w => w.includes('시각 순') && w.includes('run-1') && w.includes('run-2')), r.warnings.join('|'));
+});
+
+// 입력 하나는 폴더 하나다(phase-1.md). 4단계 게이트도 폴더만 입력으로 센다. 파일을 세면 1단계는 통과하고 4단계에서 어긋난다.
+test('phase1: 입력은 폴더다. 파일은 세지 않고 알린다. README* 는 뺀다', () => {
+  const app = makeApp();
+  for (const n of [1, 2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
+  write(app, `${A2W}/runs/inputs/README.md`, 'r');
+  write(app, `${A2W}/runs/inputs/README.txt`, 'r');
+  write(app, `${A2W}/runs/inputs/1-a/in.md`, 'x');
+  for (const f of ['b.pdf', 'c.pdf']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  const r = checkPhase1(join(app, A2W));
+  assert.ok(r.errors.some(e => e.includes('입력이 1개')), r.errors.join('\n'));
+  assert.ok(r.errors.some(e => e.includes('폴더') && e.includes('b.pdf') && e.includes('c.pdf')), r.errors.join('\n'));
+  assert.ok(!r.errors.some(e => e.includes('README.txt')));
 });

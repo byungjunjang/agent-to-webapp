@@ -19,10 +19,11 @@
 - <질문> · 기본값: <…> · 결정: <답> (<날짜> 또는 기본값)
 
 ## 1. 서버 쪽 호출
-Claude 를 부르는 코드와 API 키는 Route Handler 또는 Server Action 에만 둔다. 브라우저 번들에 키가 가지 않는다.
+판정이 `코드로 고정` 이면 LLM 호출도 API 키도 없다. 아래에서 "판정이 `Claude 호출 유지` 일 때만" 이라고 적힌 줄을 지운다.
+판정이 `Claude 호출 유지` 일 때만: Claude 를 부르는 코드와 API 키는 Route Handler 또는 Server Action 에만 둔다. 브라우저 번들에 키가 가지 않는다.
 - LLM 호출: <skill-spec.md 의 프롬프트 한 번 / 없음(코드로 고정)>
-- 환경변수: ANTHROPIC_API_KEY (Vercel 프로젝트 설정). 모델 ID 는 skill-spec.md 의 `- 모델:` 값
-- 로컬 `next dev` 는 이 폴더의 `.env.local` 에 키를 둔다(create-next-app 의 .gitignore 가 가린다)
+- 환경변수(판정이 `Claude 호출 유지` 일 때만): ANTHROPIC_API_KEY (Vercel 프로젝트 설정). 모델 ID 는 skill-spec.md 의 `- 모델:` 값
+- 로컬 키(판정이 `Claude 호출 유지` 일 때만): `next dev` 는 이 폴더의 `.env.local` 에 둔다(create-next-app 의 .gitignore 가 가린다)
 
 ## 2. 실행 시간 분할
 Vercel 함수는 실행 시간 제한이 있다. 기본 제한은 플랜 최대치보다 짧아 코드에 값을 적어야 한다.
@@ -46,12 +47,13 @@ Vercel 함수는 실행 시간 제한이 있다. 기본 제한은 플랜 최대�
 
 ## 6. 인증
 범위 밖. 단일 사용자 데모. 로그인·멀티테넌트를 만들지 않는다. 대신 Vercel 배포 보호를 켠다(프로젝트 Settings →
-Deployment Protection, Vercel Authentication 또는 Password). URL 을 아는 누구나 학습자의 API 키로 앱을
-돌릴 수 있기 때문이다.
+Deployment Protection, Vercel Authentication 또는 Password). URL 을 아는 누구나 앱을 돌릴 수 있기 때문이다
+(판정이 `Claude 호출 유지` 면 학습자의 API 키로 돈다).
 
 ## 7. 배포 후 검증
-- [ ] Vercel 환경변수에 `ANTHROPIC_API_KEY` 가 있다. Supabase 면 URL 과 키도
-- [ ] 브라우저 번들에 키가 없다: 빌드 뒤 `grep -r "sk-ant" .next/static` 결과가 비어 있다
+- [ ] Supabase 면 Vercel 환경변수에 Supabase URL 과 키가 있다
+- [ ] (판정이 `Claude 호출 유지` 일 때만) Vercel 환경변수에 `ANTHROPIC_API_KEY` 가 있다
+- [ ] (판정이 `Claude 호출 유지` 일 때만) 브라우저 번들에 키가 없다: 빌드 뒤 `grep -r "sk-ant" .next/static` 결과가 비어 있다
 - [ ] 배포 보호가 켜져 있다: 로그아웃한 브라우저(시크릿 창)에서 URL 을 열면 로그인이나 비밀번호를 요구한다
 - [ ] 파싱하는 Route Handler 에 `export const maxDuration` 이 있고 값이 2절과 같다
 - [ ] `runs/sample-*/` 의 입력을 배포된 앱에 넣어 `verify/report.md` 와 비교했다

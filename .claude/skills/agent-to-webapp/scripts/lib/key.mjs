@@ -8,6 +8,13 @@ export const SKILL_ENV = '.env';
 export const PROJECT_ENV = join('docs', 'agent-to-webapp', 'verify', '.env');
 export const LABELS = { env: '셸 환경변수', project: '프로젝트 verify/.env', skill: '스킬 .env' };
 
+// 값 하나를 Node --env-file 처럼 읽는다. 따옴표 안은 그대로, 따옴표 없으면 '#' 부터 주석이라 떼고 다듬는다.
+export function envValue(v) {
+  const q = v.match(/^(["'`])(.*)\1/);
+  if (q) return q[2];
+  return v.replace(/(^|\s)#.*$/, '').trim();
+}
+
 // .env 파일에 비어 있지 않은 ANTHROPIC_API_KEY 줄이 있는가. 값은 확인만 하고 버린다.
 export function fileHasKey(p) {
   if (!existsSync(p)) return false;
@@ -15,7 +22,7 @@ export function fileHasKey(p) {
     const line = raw.trim();
     if (line.startsWith('#')) continue;
     const m = line.match(/^(?:export\s+)?ANTHROPIC_API_KEY\s*=\s*(.*)$/);
-    if (m && m[1].replace(/^["']|["']$/g, '').trim() !== '') return true;
+    if (m && envValue(m[1]).trim() !== '') return true;
   }
   return false;
 }

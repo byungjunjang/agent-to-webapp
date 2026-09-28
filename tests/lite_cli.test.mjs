@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeApp, write, LITE } from './helpers.mjs';
 import { run, parseArgs } from '../.claude/skills/agent-to-webapp-lite/scripts/check_lite.mjs';
+import { RUN_HEADINGS } from '../.claude/skills/agent-to-webapp-lite/scripts/lib/phase1.mjs';
 
 // out/err 를 모아 두고 종료코드와 같이 돌려준다.
 function call(app, argv) {
@@ -135,4 +136,119 @@ test('알 수 없는 명령은 사용법과 2', () => {
 
 test('key 명령은 없다 (lite 는 API 키를 쓰지 않는다)', () => {
   assert.equal(call(newApp(), ['key']).code, 2);
+});
+
+test('init: 기존 STATUS 와 모드가 다르면 경고하고 2. STATUS 는 그대로', () => {
+  const app = newApp();
+  call(app, ['init', '--target', 'target', '--mode', 'dashboard', '--output', 'o.csv']);
+  const r = call(app, ['init', '--target', 'target', '--mode', 'skill', '--skill', 'x']);
+  assert.equal(r.code, 2);
+  assert.ok(r.err.includes('dashboard') && r.err.includes('skill'), r.err);
+  assert.ok(readFileSync(join(app, LITE, 'STATUS.md'), 'utf8').includes('mode: dashboard'));
+});
+
+test('init: 값에 줄바꿈·제어 문자가 있으면 2 (STATUS 줄 주입 방지)', () => {
+  const app = newApp();
+  // Windows 는 줄바꿈이 든 폴더를 못 만들어 존재 검사로도 막히므로 메시지로 구분한다
+  const r = call(app, ['init', '--target', 'target\nphase-5: passed 2026-01-01', '--mode', 'dashboard', '--output', 'o.csv']);
+  assert.equal(r.code, 2);
+  assert.ok(r.err.includes('줄바꿈'), r.err);
+  for (const argv of [
+    ['init', '--target', 'target', '--mode', 'dashboard', '--output', 'o\r.csv'],
+    ['init', '--target', 'target', '--mode', 'skill', '--skill', 'a\u0007b'],
+  ]) {
+    const x = call(app, argv);
+    assert.equal(x.code, 2);
+    assert.ok(x.err.includes('줄바꿈'), x.err);
+  }
+  assert.equal(existsSync(join(app, LITE, 'STATUS.md')), false);
+});
+
+test('--override 는 2단계에서만. 다른 단계면 2', () => {
+  const app = newApp();
+  call(app, ['init', '--target', 'target', '--mode', 'dashboard', '--output', 'o.csv']);
+  write(app, `${LITE}/runs/run-1.schema.md`, schemaDoc());
+  const r = call(app, ['1', '--override', '사유']);
+  assert.equal(r.code, 2);
+  assert.ok(r.err.includes('2단계'), r.err);
+  assert.ok(!readFileSync(join(app, LITE, 'STATUS.md'), 'utf8').includes('phase-1: passed'));
+});
+
+test('--override 는 사유가 있어야 하고 줄바꿈을 받지 않는다', () => {
+  const app = newApp();
+  call(app, ['init', '--target', 'target', '--mode', 'dashboard', '--output', 'o.csv']);
+  write(app, `${LITE}/runs/run-1.schema.md`, schemaDoc());
+  call(app, ['1']);
+  write(app, `${LITE}/verdict.md`, '## 근거\n- x\n\n## 민감 열\n- 없음\n\n판정: 고정 불가\n');
+  const bare = call(app, ['2', '--approve', '--override']);
+  assert.equal(bare.code, 2);
+  assert.ok(bare.err.includes('사유'), bare.err);
+  const nl = call(app, ['2', '--approve', '--override', 'a\nphase-3: passed 2026-01-01']);
+  assert.equal(nl.code, 2);
+  assert.ok(nl.err.includes('줄바꿈'), nl.err);
+  assert.ok(!readFileSync(join(app, LITE, 'STATUS.md'), 'utf8').includes('phase-2: passed'));
+});
+
+// skill 모드 1단계를 통과시키는 산출물(샘플 2건)
+function skillPhase1(app) {
+  write(app, `${LITE}/runs/run-1.md`, RUN_HEADINGS.map(h => `${h}\n- x\n`).join('\n'));
+  for (const k of [1, 2]) {
+    write(app, `${LITE}/runs/sample-${k}/inv-${k}.pdf`, 'PDF');
+    write(app, `${LITE}/runs/sample-${k}/output.json`, `{"barcode":"${k}","items":[]}`);
+  }
+}
+
+function skillSpec(branch) {
+  return ['## 입력 스키마', '', '```json', '{ "file": "PDF" }', '```', '',
+    '## 출력 스키마', '', '```json', '{ "barcode": "문자열", "items": "배열" }', '```', '',
+    ...branch, '## 사람 확인', '- 확인한다', '', '## 실패 처리', '- 멈춘다', ''].join('\n');
+}
+
+test('2단계 --override: 뒤집은 판정이 STATUS 에 남고 3단계가 그 판정으로 검사한다', () => {
+  const app = newApp();
+  call(app, ['init', '--target', 'target', '--mode', 'skill', '--skill', 'invoice-parser', '--samples', '2']);
+  skillPhase1(app);
+  assert.equal(call(app, ['1']).code, 0);
+  write(app, `${LITE}/verdict.md`, '## 근거\n- x\n\n## 출력 구조\n- x\n\n## 사람 확인\n- x\n\n판정: 고정 불가\n');
+  const r2 = call(app, ['2', '--approve', '--override', '사람이 확인 화면을 두기로 했다']);
+  assert.equal(r2.code, 0, r2.err);
+  const st = readFileSync(join(app, LITE, 'STATUS.md'), 'utf8');
+  assert.doesNotMatch(st, /^terminated: /m, 'override 면 종료하지 않는다');
+  assert.match(st, /^verdict: Claude 호출 유지$/m);
+  assert.ok(st.includes('override: 사람이 확인 화면을 두기로 했다'));
+
+  // verdict.md 는 여전히 '고정 불가' 다. 3단계는 STATUS 의 판정(Claude 호출 유지)으로 본다
+  write(app, `${LITE}/skill-spec.md`, skillSpec(['## 규칙', '- 바코드는 첫 줄', '']));
+  const bad = call(app, ['3', '--approve']);
+  assert.equal(bad.code, 1);
+  assert.ok(bad.err.includes('## 프롬프트'), bad.err);
+  write(app, `${LITE}/skill-spec.md`, skillSpec(['## 프롬프트', '', '```', '바코드와 품목을 JSON 으로', '```', '',
+    '- 모델: claude-sonnet-5', '- 최대 토큰: 4096', '- 타임아웃: 60초', '']));
+  const ok = call(app, ['3', '--approve']);
+  assert.equal(ok.code, 0, ok.err);
+});
+
+test('dashboard 4단계 통과가 판정을 고정 가능으로 확정하고 rollback 이 되돌린다', () => {
+  const app = newApp();
+  call(app, ['init', '--target', 'target', '--mode', 'dashboard', '--output', 'o.csv']);
+  write(app, `${LITE}/runs/run-1.schema.md`, schemaDoc());
+  call(app, ['1']);
+  write(app, `${LITE}/verdict.md`, '## 근거\n- 키 있음\n\n## 민감 열\n- 없음\n\n판정: 조건부 고정 가능(관찰 1회)\n');
+  assert.equal(call(app, ['2', '--approve']).code, 0);
+  assert.match(readFileSync(join(app, LITE, 'STATUS.md'), 'utf8'), /^verdict: 조건부 고정 가능$/m);
+  write(app, `${LITE}/contract.md`, ['## 테이블', 'channel_sales', '', '## 열', '', '| 열 | 타입 | 필수 | 설명 |', '|---|---|---|---|',
+    '| channel | 문자열 | 예 | 채널 |', '', '## 유일 키', '- channel', '', '## 갱신 시각', 'checked_at', '',
+    '## upsert 규칙', '덮어쓴다', '', '## 갱신 주체', '마지막 단계', '', '## 제외 열', '- 없음', '',
+    '## 파생 집계', '- 없음', '', '## 에이전트에 추가할 마지막 단계', 'upsert', ''].join('\n'));
+  assert.equal(call(app, ['3', '--approve']).code, 0);
+  write(app, `${LITE}/runs/run-2.schema.md`, schemaDoc());
+  write(app, `${LITE}/verify/report.md`, '## 스키마 diff\n차이 없음\n\n## 키 중복\n없음\n\n## 판정\n계약 그대로\n');
+  const r4 = call(app, ['4']);
+  assert.equal(r4.code, 0, r4.err);
+  assert.ok(r4.out.includes('고정 가능'), r4.out);
+  assert.match(readFileSync(join(app, LITE, 'STATUS.md'), 'utf8'), /^verdict: 고정 가능$/m);
+  call(app, ['rollback', '4']);
+  assert.match(readFileSync(join(app, LITE, 'STATUS.md'), 'utf8'), /^verdict: 조건부 고정 가능$/m);
+  call(app, ['rollback', '2']);
+  assert.doesNotMatch(readFileSync(join(app, LITE, 'STATUS.md'), 'utf8'), /^verdict:/m);
 });

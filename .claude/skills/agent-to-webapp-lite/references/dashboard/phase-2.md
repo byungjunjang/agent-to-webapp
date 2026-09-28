@@ -56,6 +56,8 @@ node $SKILL_DIR/scripts/check_lite.mjs 2 --approve
 
 `--approve` 없이는 통과가 기록되지 않는다. `--batch` 면 묻지 않고 넘긴다.
 사람이 판정을 뒤집을 때만 `--override "<사유>"` 를 쓰고, 기록은 `조건부 고정 가능` 이 된다.
+게이트는 통과한 판정(override 반영)을 STATUS 의 `verdict` 에 남기고, 뒤 단계는 verdict.md 가 아니라 그것을 따른다.
+`--override` 는 2단계에서만 받는다.
 
 ## 4. 고정 불가면
 

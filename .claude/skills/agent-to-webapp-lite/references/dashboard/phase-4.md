@@ -49,6 +49,9 @@ node $SKILL_DIR/scripts/check_lite.mjs 4
 - 게이트가 찾은 깨지는 열 이름이 report.md 본문에 없으면 **실패**
 - 계약 밖의 새 열은 경고로만 알린다
 
+통과하면 게이트가 STATUS 의 `verdict` 를 `조건부 고정 가능` → `고정 가능` 으로 확정하고 로그에 남긴다.
+`rollback 3`·`rollback 4` 는 확정을 되돌린다.
+
 ## 4. 깨졌으면
 
 - 계약을 새 현실에 맞추려면 `node $SKILL_DIR/scripts/check_lite.mjs rollback 3` 뒤 3단계부터

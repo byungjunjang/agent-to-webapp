@@ -27,8 +27,9 @@
 
 1. 저장소 루트에서 테스트가 통과해야 한다: `node --test "tests/*.test.mjs"`
 2. 커밋한 뒤 설치한다: `node .claude/skills/agent-to-webapp/scripts/install.mjs`
-   - 인자 없이 부르면 `.claude/skills/` 아래 **두 스킬을 함께** 설치한다. 하나만 넣으려면 대상 폴더를 인자로 준다
-   - 설치된 쪽 `.env`(사용자 API 키)는 지우지도 덮지도 않는다. 저장소 쪽 `.env` 는 복사하지 않는다
+   - 인자 없이 부르면 `.claude/skills/` 아래 **두 스킬을 함께** 설치한다. 하나만 넣으려면 대상 폴더를 인자로 준다.
+     대상 폴더 이름은 `agent-to-webapp` 이어야 하고, 원본의 조상·자손 폴더는 거부한다
+   - 설치된 쪽 `.env`·`.env.*`(사용자 키)는 어느 깊이든 지우지도 덮지도 않는다. 저장소 쪽 것은 복사하지 않는다(`.env.example` 만 복사)
    - 저장소에 없는 옛 파일은 설치된 쪽에서 지운다
    - `rm -rf` 뒤 `cp -r` 로 설치하지 않는다. 키가 지워진다
 3. 확인: 두 줄 다 아무것도 출력하지 않아야 한다
@@ -43,7 +44,8 @@
   복사해 채운다. 저장소 안 스킬 폴더에 만들면 유저 스코프 설치본이 찾지 못한다
 - 셸 환경변수 `ANTHROPIC_API_KEY` 로 두지 않는다. Claude Code 가 구독 대신 그 키로 과금한다
 - `.env` 는 git 에 올리지 않는다. 저장소와 스킬 폴더의 `.gitignore` 가 가리고 `tests/secrets.test.mjs` 가 확인한다
-- `agent-to-webapp-lite` 는 키를 쓰지 않는다. `.env`·`.env.example`·`key` 명령이 없고 `tests/lite_skill_md.test.mjs` 가 확인한다
+- `agent-to-webapp-lite` 는 키를 쓰지 않는다. 스킬 폴더에 `.env`·`.env.example` 이 없고, `scripts/` 가 `.env`·`ANTHROPIC_API_KEY` 를
+  읽지 않으며, `key` 명령이 없다. `tests/lite_skill_md.test.mjs`·`tests/lite_cli.test.mjs` 가 확인한다
 
 ## dogfood 할 때
 

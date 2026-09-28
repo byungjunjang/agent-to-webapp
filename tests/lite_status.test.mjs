@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { makeApp, LITE } from './helpers.mjs';
 import {
   LITE_DIR, MODES, DEFAULT_SAMPLES,
-  emptyStatus, parseStatus, formatStatus, readStatus, writeStatus,
+  emptyStatus, parseStatus, formatStatus, readStatus, writeStatus, isSafeValue,
 } from '../.claude/skills/agent-to-webapp-lite/scripts/lib/status.mjs';
 
 test('LITE_DIR 은 정식 폴더와 다르다', () => {
@@ -72,4 +72,23 @@ test('readStatus/writeStatus: 파일 위치와 없을 때 null', () => {
   assert.ok(existsSync(join(app, LITE_DIR, 'STATUS.md')));
   assert.ok(readFileSync(join(app, LITE_DIR, 'STATUS.md'), 'utf8').includes('target: ../t'));
   assert.equal(readStatus(app).mode, 'dashboard');
+});
+
+test('verdict: 2단계 판정을 STATUS 에 남기고 왕복한다. 없는 줄은 null', () => {
+  const st = emptyStatus('../y', 'skill', { skill: 'invoice-parser' });
+  assert.equal(st.verdict, null);
+  assert.ok(!formatStatus(st).includes('verdict:'), '판정 전에는 줄을 쓰지 않는다');
+  st.verdict = 'Claude 호출 유지';
+  const text = formatStatus(st);
+  assert.ok(text.includes('\nverdict: Claude 호출 유지\n'));
+  assert.deepEqual(parseStatus(text), st);
+  assert.equal(parseStatus('target: ../a\nmode: skill\n').verdict, null, '옛 STATUS 도 읽힌다');
+});
+
+test('isSafeValue: 줄바꿈·제어 문자가 든 값은 STATUS 에 쓰지 않는다', () => {
+  assert.equal(isSafeValue('../x/out.csv'), true);
+  assert.equal(isSafeValue('../x\nphase-5: passed 2026-01-01'), false);
+  assert.equal(isSafeValue('a\rb'), false);
+  assert.equal(isSafeValue('a\u0000b'), false);
+  assert.throws(() => formatStatus(emptyStatus('../x\nphase-1: passed 2026-01-01', 'dashboard', { output: 'o' })));
 });

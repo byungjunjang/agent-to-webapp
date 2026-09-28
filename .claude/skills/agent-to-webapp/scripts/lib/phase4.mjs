@@ -5,7 +5,7 @@ import { sectionBody, isBlank, hasHeading, normalize } from './md.mjs';
 import { parseWorkflow, ACTOR_CLASS, STEP_HEADING } from './phase3.mjs';
 import { resolveModelId } from './models.mjs';
 
-export const REQUIRED_FILES = ['run.ts', 'package.json', '.gitignore', 'report.md', 'steps/index.ts'];
+export const REQUIRED_FILES = ['run.ts', 'package.json', '.gitignore', 'report.md', 'steps/index.ts', 'lib/step.ts', 'lib/llm.ts'];
 // 스킬 자산 assets/verify-template 에서 복사되는 파일. LLM 이 고치면 경고한다(고친 내용이 스킬로 돌아와야 한다).
 export const TEMPLATE_DIR = join('assets', 'verify-template');
 export const TEMPLATE_FIXED = ['run.ts', 'lib/step.ts', 'lib/llm.ts'];

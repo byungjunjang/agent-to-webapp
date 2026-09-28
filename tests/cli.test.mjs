@@ -31,7 +31,7 @@ const RUN = `# run\n${RUN_HEADINGS[0]}\n1. 읽기\n${RUN_HEADINGS[1]}\n- 판단\
 function passPhase1(app) {
   for (const n of [1, 2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
   write(app, `${A2W}/runs/inputs/README.md`, 'r');
-  for (const f of ['a', 'b', 'c']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  for (const f of ['1-a', '2-b', '3-c']) write(app, `${A2W}/runs/inputs/${f}/in.md`, 'x');
   const r = cli(app, '1');
   assert.equal(r.code, 0, r.err);
 }
@@ -160,7 +160,7 @@ function initedApp1() {
   assert.equal(cli(app, 'init', '--target', target, '--runtime', 'claude-code', '--runs', '1').code, 0);
   write(app, `${A2W}/runs/run-1.md`, RUN);
   write(app, `${A2W}/runs/inputs/README.md`, 'r');
-  write(app, `${A2W}/runs/inputs/a`, 'x');
+  write(app, `${A2W}/runs/inputs/1-a/in.md`, 'x');
   return app;
 }
 
@@ -180,9 +180,61 @@ test('runs 1: 1단계는 run 1개로 통과, 2단계는 고정 가능을 거부�
 test('runs 1 로 시작했어도 run 3개를 찾으면 STATUS 의 runs 를 3 으로 올린다', () => {
   const app = initedApp1();
   for (const n of [2, 3]) write(app, `${A2W}/runs/run-${n}.md`, RUN);
-  for (const f of ['b', 'c']) write(app, `${A2W}/runs/inputs/${f}`, 'x');
+  for (const f of ['2-b', '3-c']) write(app, `${A2W}/runs/inputs/${f}/in.md`, 'x');
   const r = cli(app, '1');
   assert.equal(r.code, 0, r.err);
   assert.ok(status(app).includes('runs: 3\n'));
   assert.ok(status(app).includes('runs 1 → 3'));
+});
+
+// 고정 불가 종료는 2단계부터 다시 할 때만 풀린다. rollback 3 이상으로 판정을 건너뛰지 못한다(2026-09-28 리뷰).
+test('고정 불가로 종료된 뒤 rollback 3 이상은 거부하고 rollback 2 를 안내한다', () => {
+  const { app } = initedApp();
+  passPhase1(app);
+  write(app, `${A2W}/verdict.md`, VERDICT_NO);
+  assert.equal(cli(app, '2', '--approve').code, 0);
+  const r = cli(app, 'rollback', '3');
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes('rollback 2'), r.err);
+  assert.match(status(app), /^terminated:/m);
+  assert.match(status(app), /phase-2: passed/);
+  assert.equal(cli(app, 'rollback', '1').code, 0);
+  assert.ok(!/^terminated:/m.test(status(app)));
+});
+
+// override 로 뒤집은 판정은 STATUS 의 verdict 에 남는다. 3·5단계 게이트가 이것을 읽는다.
+test('2단계 통과 → STATUS 에 verdict. override 면 조건부, rollback 2 면 지운다', () => {
+  const { app } = initedApp();
+  passPhase1(app);
+  write(app, `${A2W}/verdict.md`, VERDICT_OK);
+  assert.equal(cli(app, '2', '--approve').code, 0);
+  assert.ok(status(app).includes('verdict: 고정 가능\n'));
+  assert.equal(cli(app, 'rollback', '2').code, 0);
+  assert.ok(!/^verdict:/m.test(status(app)));
+  write(app, `${A2W}/verdict.md`, VERDICT_NO);
+  assert.equal(cli(app, '2', '--approve', '--override', '사이트 3개뿐').code, 0);
+  assert.ok(status(app).includes('verdict: 조건부 고정 가능\n'));
+});
+
+test('3단계: STATUS verdict 가 조건부면 workflow.md 에 ## 조건 이 있어야 한다', () => {
+  const { app } = initedApp();
+  passPhase1(app);
+  write(app, `${A2W}/verdict.md`, VERDICT_NO);
+  assert.equal(cli(app, '2', '--approve', '--override', '사이트 3개뿐').code, 0);
+  const wf = `## 흐름도\n\`\`\`mermaid\nflowchart TD\n  S1["1 a"]\n  class S1 code\n\`\`\`\n## 단계\n### 단계 1: a\n- 실행 주체: 코드\n- 입력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 출력 스키마:\n\`\`\`json\n{}\n\`\`\`\n- 실패 처리: 중단\n## 규칙화 불가\n- 없음\n## 웹 앱 간소화\n- 없음\n`;
+  write(app, `${A2W}/workflow.md`, wf);
+  const r = cli(app, '3', '--approve');
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes('## 조건'), r.err);
+  write(app, `${A2W}/workflow.md`, wf.replace('## 단계\n', '## 조건\n- override: 사이트 3개뿐\n## 단계\n'));
+  const r2 = cli(app, '3', '--approve');
+  assert.equal(r2.code, 0, r2.err);
+});
+
+test('init: --target 에 줄바꿈·제어 문자가 있으면 2', () => {
+  const app = makeApp();
+  const target = freshTarget(app);
+  assert.equal(cli(app, 'init', '--target', `${target}\nphase-1: passed 2026-01-01`, '--runtime', 'claude-code').code, 2);
+  assert.equal(cli(app, 'init', '--target', `${target}\u0007`, '--runtime', 'claude-code').code, 2);
+  assert.equal(existsSync(join(app, A2W, 'STATUS.md')), false);
 });

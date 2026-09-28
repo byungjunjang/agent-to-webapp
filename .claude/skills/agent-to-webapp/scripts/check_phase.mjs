@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { A2W_DIR, RUNTIMES, DEFAULT_RUNS, DEFAULT_MODEL, emptyStatus, readStatus, writeStatus, formatStatus, today } from './lib/status.mjs';
+import { A2W_DIR, RUNTIMES, DEFAULT_RUNS, DEFAULT_MODEL, CONTROL_CHARS, emptyStatus, readStatus, writeStatus, formatStatus, today } from './lib/status.mjs';
 import { checkPhase1 } from './lib/phase1.mjs';
 import { checkPhase2 } from './lib/phase2.mjs';
 import { checkPhase3 } from './lib/phase3.mjs';
@@ -40,9 +40,9 @@ const BOOL_FLAGS = new Set(['approve', 'batch']);
 const CHECKS = {
   1: (d, o) => checkPhase1(d, { runs: o.runs }),
   2: (d, o) => checkPhase2(d, { override: o.override, runs: o.runs }),
-  3: (d) => checkPhase3(d),
+  3: (d, o) => checkPhase3(d, { verdict: o.verdict }),
   4: (d, o) => checkPhase4(d, { skillDir: SKILL_DIR, runs: o.runs, model: o.model }),
-  5: (d) => checkPhase5(d),
+  5: (d, o) => checkPhase5(d, { verdict: o.verdict }),
 };
 
 export function parseArgs(argv) {
@@ -65,6 +65,7 @@ function init(cwd, flags, out, err) {
   if (typeof target !== 'string' || !RUNTIMES.includes(runtime)) {
     err(`init 은 --target <경로> --runtime ${RUNTIMES.join('|')} 가 필요하다`); return 2;
   }
+  if (CONTROL_CHARS.test(target)) { err('--target 에 줄바꿈·제어 문자가 있다. STATUS 한 줄에 들어가는 값이다'); return 2; }
   if (!existsSync(resolve(cwd, target))) { err(`대상 폴더가 없다: ${target}`); return 2; }
   const runs = flags.runs === undefined ? DEFAULT_RUNS : Number(flags.runs);
   if (!Number.isInteger(runs) || runs < 1) { err('--runs 는 1 이상의 정수다 (기본 3. 3 미만이면 2단계 판정은 조건부까지)'); return 2; }
@@ -89,7 +90,10 @@ function rollback(cwd, n, out, err) {
   if (!PHASES.includes(n)) { err('rollback <1-5>'); return 2; }
   const st = readStatus(cwd);
   if (!st) { err('STATUS.md 가 없다. 먼저 init'); return 2; }
+  // 고정 불가 종료는 판정부터 다시 할 때만 푼다. 3 이상으로 되돌리면 판정을 건너뛴다
+  if (st.terminated && n >= 3) { err(`종료됨: ${st.terminated}. 판정을 건너뛸 수 없다. 다시 하려면 node check_phase.mjs rollback 2`); return 1; }
   for (const k of Object.keys(st.phases)) if (Number(k) >= n) delete st.phases[k];
+  if (n <= 2) st.verdict = null;
   st.terminated = null;
   st.log.push(`${today()} rollback ${n}`);
   writeStatus(cwd, st);
@@ -123,7 +127,7 @@ function gate(cwd, n, flags, out, err) {
 
   const a2wDir = join(cwd, A2W_DIR);
   const override = typeof flags.override === 'string' ? flags.override : null;
-  const r = CHECKS[n](a2wDir, { override, runs: st.runs, model: st.model });
+  const r = CHECKS[n](a2wDir, { override, runs: st.runs, model: st.model, verdict: st.verdict });
   for (const w of r.warnings) out(`경고: ${w}`);
   for (const m of r.notes ?? []) out(m);
   if (!r.ok) {
@@ -146,6 +150,8 @@ function gate(cwd, n, flags, out, err) {
   }
 
   st.phases[n] = { passed: today(), approved: NEEDS_APPROVAL.includes(n) && Boolean(flags.approve) };
+  // override 를 반영한 최종 판정. verdict.md 에는 뒤집기 전 판정이 남아 있어 3·5단계는 이것을 읽는다
+  if (n === 2) st.verdict = r.verdict;
   if (override) st.log.push(`${today()} phase-${n} override: ${override}`);
   if (flags.batch && NEEDS_APPROVAL.includes(n)) st.log.push(`${today()} phase-${n} batch (승인 생략)`);
 

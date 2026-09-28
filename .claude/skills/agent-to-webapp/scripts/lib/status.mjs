@@ -1,6 +1,7 @@
 // STATUS.md 읽기·쓰기. 이 파일을 쓰는 것은 check_phase.mjs 뿐이다. 모델은 쓰지 않는다.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { VERDICTS } from './phase2.mjs';
 
 export const A2W_DIR = join('docs', 'agent-to-webapp');
 export const STATUS_FILE = 'STATUS.md';
@@ -18,12 +19,17 @@ export function statusPath(appDir) {
 export const DEFAULT_RUNS = 3;
 export const DEFAULT_MODEL = 'sonnet';
 
+// target 은 STATUS 한 줄에 그대로 들어간다. 줄바꿈이 섞이면 가짜 phase 줄이 생긴다.
+export const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+// verdict: 2단계가 정한 최종 판정(override 반영). 3·5단계 게이트가 읽는다. 2단계 전·옛 파일은 null.
 export function emptyStatus(target, runtime, { runs = DEFAULT_RUNS, model = DEFAULT_MODEL } = {}) {
-  return { target, runtime, created: today(), runs, model, phases: {}, terminated: null, log: [] };
+  if (CONTROL_CHARS.test(String(target))) throw new Error('target 에 줄바꿈·제어 문자가 있다');
+  return { target, runtime, created: today(), runs, model, verdict: null, phases: {}, terminated: null, log: [] };
 }
 
 export function parseStatus(text) {
-  const st = { target: null, runtime: null, created: null, runs: DEFAULT_RUNS, model: DEFAULT_MODEL, phases: {}, terminated: null, log: [] };
+  const st = { target: null, runtime: null, created: null, runs: DEFAULT_RUNS, model: DEFAULT_MODEL, verdict: null, phases: {}, terminated: null, log: [] };
   let inLog = false;
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
@@ -39,6 +45,8 @@ export function parseStatus(text) {
       st.terminated = value || null;
     } else if (key === 'target' || key === 'runtime' || key === 'created' || key === 'model') {
       st[key] = value;
+    } else if (key === 'verdict') {
+      st.verdict = VERDICTS.includes(value) ? value : null;
     } else if (key === 'runs') {
       const n = Number(value);
       if (Number.isInteger(n) && n >= 1) st.runs = n;
@@ -53,6 +61,7 @@ export function formatStatus(st) {
     `target: ${st.target}`, `runtime: ${st.runtime}`, `created: ${st.created}`,
     `runs: ${st.runs ?? DEFAULT_RUNS}`, `model: ${st.model ?? DEFAULT_MODEL}`,
   ];
+  if (st.verdict) lines.push(`verdict: ${st.verdict}`);
   for (const n of [1, 2, 3, 4, 5]) {
     const p = st.phases[n];
     lines.push(p ? `phase-${n}: passed ${p.passed}${p.approved ? ' approved' : ''}` : `phase-${n}:`);

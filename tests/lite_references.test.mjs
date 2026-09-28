@@ -22,7 +22,8 @@ test('dashboard 단계 문서가 게이트 상수를 담는다', () => {
   const p3 = doc('dashboard', 3);
   for (const h of CONTRACT_HEADINGS) assert.ok(p3.includes(h), h);
   const p4 = doc('dashboard', 4);
-  for (const h of [...SCHEMA_HEADINGS.slice(0, 2), ...DASHBOARD_REPORT_HEADINGS]) assert.ok(p4.includes(h), h);
+  // 4단계 게이트가 run-2 에 checkSchemaDoc 을 쓰므로 일곱 절 전부가 문서에 있어야 한다
+  for (const h of [...SCHEMA_HEADINGS, ...DASHBOARD_REPORT_HEADINGS]) assert.ok(p4.includes(h), h);
   assert.ok(p4.includes('rollback 3'));
   const p5 = doc('dashboard', 5);
   for (const h of DASHBOARD_BRIEF_HEADINGS) assert.ok(p5.includes(h), h);
@@ -83,4 +84,11 @@ test('단계 문서가 자기 게이트 명령을 알려준다', () => {
     assert.ok(doc(mode, 2).includes('--approve'));
     assert.ok(doc(mode, 3).includes('--approve'));
   }
+});
+
+test('skill 브리프 틀: API 키 줄은 판정이 Claude 호출 유지일 때만이다', () => {
+  const text = readFileSync(`${REF}/brief-template-skill.md`, 'utf8');
+  const keyLines = text.split('\n').filter(l => /ANTHROPIC_API_KEY|API 키|sk-ant|\.env\.local/.test(l));
+  assert.ok(keyLines.length >= 2, '키 안내 자체는 남는다');
+  for (const l of keyLines) assert.ok(l.includes('Claude 호출 유지'), `조건 없이 키를 전제한다: ${l}`);
 });

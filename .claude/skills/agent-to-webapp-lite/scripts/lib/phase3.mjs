@@ -25,13 +25,34 @@ export const SPEC_PROMPT = '## 프롬프트';
 export const SPEC_FIELDS = ['- 모델:', '- 최대 토큰:', '- 타임아웃:'];
 
 // '## 제외 열' 목록의 이름들. '- 없음' 은 뺀다.
+// 한 줄에 하나: '- 열 이름' 또는 '- 열 이름 — 사유'. 백틱이 있으면 백틱 안이 이름이다.
+// 이름 안의 띄어쓰기·하이픈(상담 원문, e-mail)은 자르지 않는다. 사유 구분자는 괄호, 앞뒤를 띄운 —·-··, 콜론.
+export function excludedName(item) {
+  const tick = item.match(/`([^`]+)`/);
+  if (tick) return tick[1].trim();
+  return item.split(/\s*[(（]|\s+[—–-]\s+|\s+·\s+|\s*:\s/)[0].replace(/[`*]/g, '').trim();
+}
+
 export function excludedColumns(text) {
   const body = sectionBody(text, CONTRACT_EXCLUDED) ?? '';
   return body.split('\n').map(l => l.trim())
     .filter(l => l.startsWith('- '))
-    .map(l => l.slice(2).split(/[ (·—-]/)[0].replace(/[`*]/g, '').trim())
+    .map(l => excludedName(l.slice(2)))
     .filter(n => n && n !== NONE);
 }
+
+// 3·5단계가 쓰는 skill 판정. STATUS 의 verdict(2단계 통과 때 --override 까지 반영해 남긴 값)가 우선이고,
+// 그 줄이 없는 옛 STATUS 면 verdict.md 를 읽는다. 둘 다 안 되면 null — 호출한 쪽이 실패로 처리한다.
+export const SKILL_FIXED = ['코드로 고정', 'Claude 호출 유지'];
+export function resolveSkillVerdict(liteDir, verdict) {
+  let v = verdict ?? null;
+  if (!v) {
+    const vp = join(liteDir, VERDICT_FILE);
+    v = existsSync(vp) ? parseVerdict(readFileSync(vp, 'utf8'), SKILL_VERDICTS) : null;
+  }
+  return SKILL_FIXED.includes(v) ? v : null;
+}
+export const UNKNOWN_VERDICT = `판정을 알 수 없다: STATUS 의 verdict 도, ${VERDICT_FILE} 의 마지막 '판정:' 줄도 ${SKILL_FIXED.join(' / ')} 가 아니다. 판정별 검사를 건너뛰지 않는다. node check_lite.mjs rollback 2 로 판정부터 다시`;
 
 function checkDashboard(liteDir, errors, warnings) {
   const p = join(liteDir, CONTRACT_FILE);
@@ -55,7 +76,7 @@ function checkDashboard(liteDir, errors, warnings) {
   }
 }
 
-function checkSkill(liteDir, samples, errors, warnings) {
+function checkSkill(liteDir, samples, given, errors, warnings) {
   const p = join(liteDir, SPEC_FILE);
   if (!existsSync(p)) { errors.push(`${SPEC_FILE} 없음`); return null; }
   const text = readFileSync(p, 'utf8');
@@ -68,9 +89,9 @@ function checkSkill(liteDir, samples, errors, warnings) {
     if (jsonBlockAfter(text, h) === null) errors.push(`${SPEC_FILE}: '${h}' 절에 json 코드 블록이 없거나 JSON 이 깨졌다 (최상위 키가 필드 이름인 객체)`);
   }
 
-  const vp = join(liteDir, VERDICT_FILE);
-  const verdict = existsSync(vp) ? parseVerdict(readFileSync(vp, 'utf8'), SKILL_VERDICTS) : null;
-  if (verdict === '코드로 고정') {
+  const verdict = resolveSkillVerdict(liteDir, given);
+  if (!verdict) errors.push(UNKNOWN_VERDICT);
+  else if (verdict === '코드로 고정') {
     const body = sectionBody(text, SPEC_RULES);
     const items = (body ?? '').split('\n').filter(l => l.trim().startsWith('- '));
     if (body === null || items.length === 0) errors.push(`${SPEC_FILE}: 판정이 '코드로 고정' 이면 '${SPEC_RULES}' 절에 규칙을 하나 이상 적는다`);
@@ -87,11 +108,11 @@ function checkSkill(liteDir, samples, errors, warnings) {
   return verdict;
 }
 
-export function checkPhase3(liteDir, { mode, samples = DEFAULT_SAMPLES } = {}) {
+export function checkPhase3(liteDir, { mode, samples = DEFAULT_SAMPLES, verdict: given = null } = {}) {
   const errors = [];
   const warnings = [];
   let verdict = null;
   if (mode === 'dashboard') checkDashboard(liteDir, errors, warnings);
-  else verdict = checkSkill(liteDir, samples, errors, warnings);
+  else verdict = checkSkill(liteDir, samples, given, errors, warnings);
   return { ok: errors.length === 0, errors, warnings, verdict };
 }

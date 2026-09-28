@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIR = '.claude/skills/agent-to-webapp-lite';
@@ -43,5 +43,16 @@ test('SKILL.md: API 키를 요구하지 않는다', () => {
 test('lite 스킬 폴더에 정식 스킬의 자산이 섞여 있지 않다', () => {
   for (const p of ['assets/verify-template', 'scripts/lib/key.mjs', 'scripts/lib/models.mjs', 'scripts/log_tool_use.mjs', '.env.example']) {
     assert.equal(existsSync(join(DIR, p)), false, `${p} 는 가져오지 않는다`);
+  }
+});
+
+test('lite 는 키를 쓰지 않는다: .env 파일이 없고 scripts 가 .env·ANTHROPIC_API_KEY 를 읽지 않는다', () => {
+  for (const p of ['.env', '.env.example']) assert.equal(existsSync(join(DIR, p)), false, p);
+  const files = readdirSync(join(DIR, 'scripts'), { recursive: true }).filter(f => String(f).endsWith('.mjs'));
+  assert.ok(files.length >= 5, files.join(', '));
+  for (const f of files) {
+    const text = readFileSync(join(DIR, 'scripts', String(f)), 'utf8');
+    assert.ok(!text.includes('ANTHROPIC_API_KEY'), `${f}: ANTHROPIC_API_KEY`);
+    assert.ok(!/\.env\b/.test(text), `${f}: .env`);
   }
 });

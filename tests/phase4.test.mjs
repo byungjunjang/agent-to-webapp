@@ -43,6 +43,8 @@ function verifyApp(report = REPORT, { steps = true } = {}) {
   write(a, `${v}/run.ts`, 'export {};');
   write(a, `${v}/package.json`, '{"name":"verify","type":"module"}');
   write(a, `${v}/.gitignore`, 'node_modules\n.env\n');
+  write(a, `${v}/lib/step.ts`, 'export {};');
+  write(a, `${v}/lib/llm.ts`, 'export {};');
   if (steps) { write(a, `${v}/steps/index.ts`, 'export const steps = [step1];'); write(a, `${v}/steps/01-추출.ts`, stepFile(1, '추출', 'code')); }
   write(a, `${v}/report.md`, report);
   return join(a, A2W);
@@ -108,6 +110,13 @@ test('phase4: steps/index.ts 가 없으면 실패', () => {
   rmSync(join(d, 'verify', 'steps', 'index.ts'));
   const r = checkPhase4(d);
   assert.ok(r.errors.some(e => e.includes('steps/index.ts')));
+});
+
+// 러너가 lib/step.ts·lib/llm.ts 를 import 한다. 5단계가 verify/lib/ 를 웹 앱으로 복사한다(2026-09-28 리뷰).
+test('phase4: verify/lib/step.ts·llm.ts 가 없으면 실패', () => {
+  const d = verifyApp();
+  rmSync(join(d, 'verify/lib/llm.ts'));
+  assert.ok(checkPhase4(d).errors.some(e => e.includes('verify/lib/llm.ts')));
 });
 
 test('phase4: index.ts 만 있고 단계 파일이 없으면 실패', () => {

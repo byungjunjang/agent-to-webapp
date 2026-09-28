@@ -34,7 +34,7 @@ Vercel 함수는 실행 시간 제한이 있다. report.md 의 단계별 시간�
 
 ## 3. 상태 저장
 <첫 줄에 `Supabase` 또는 `DB 없음`>
-- 판단 근거: 사람 단계 <없음/마지막/중간> · 시간 합 <n초, 60초 초과 여부>. 중간이거나 초과면 Supabase
+- 판단 근거: 사람 단계 <없음/마지막/중간> · 시간 합 <n초, 배포 플랜의 함수 시간 제한 초과 여부>. 중간이거나 초과면 Supabase
 - Supabase 면: 테이블 `runs`(입력·상태·결과), `steps`(run_id·단계·상태·입출력 JSON). 단계 함수는 이전 단계의 출력 JSON 을 읽고 자기 출력을 쓴다. 이어 붙이기는 큐 또는 cron
 - DB 없음이면: Route Handler 하나가 steps 를 순서대로 부르고 결과를 응답한다. 사람 단계가 마지막이면 결과 화면에서 승인·반려하고, 반려는 메모와 함께 다시 실행한다
 
@@ -49,17 +49,18 @@ Vercel 함수는 실행 시간 제한이 있다. report.md 의 단계별 시간�
 Protection, Vercel Authentication 또는 Password). URL 을 아는 누구나 학습자의 API 키로 앱을 돌릴 수 있기 때문이다.
 
 ## 7. 배포 후 검증
-배포 뒤 `docs/agent-to-webapp/runs/inputs/` 3건을 웹 앱에 넣어 `verify/report.md` 와 비교한다. 결과는
-`docs/agent-to-webapp/deploy-report.md` 에 `verify/report.md` 와 같은 헤딩(`## 입력 1` ~ `## 입력 3`)으로 적는다.
+배포 뒤 `docs/agent-to-webapp/runs/inputs/` 의 입력 N건(STATUS runs)을 웹 앱에 넣어 `verify/report.md` 와 비교한다. 결과는
+`docs/agent-to-webapp/deploy-report.md` 에 `verify/report.md` 와 같은 헤딩(`## 입력 1` ~ `## 입력 N`)으로 적는다.
 - [ ] Vercel 환경변수에 `ANTHROPIC_API_KEY` 가 있다. Supabase 면 URL 과 키도
 - [ ] 브라우저 번들에 키가 없다: 빌드 뒤 `grep -r "sk-ant" .next/static` 결과가 비어 있다
 - [ ] 배포 보호가 켜져 있다: 로그아웃한 브라우저(시크릿 창)에서 URL 을 열면 Vercel 로그인이나 비밀번호를 요구한다
 - [ ] 단계를 순서대로 부르는 Route Handler 에 `export const maxDuration` 이 있고 값이 2절과 같다
-- [ ] `runs/inputs/` 의 3건을 배포된 앱에 차례로 넣었다
+- [ ] `runs/inputs/` 의 입력 N건을 배포된 앱에 차례로 넣었다
 - [ ] 결과를 `deploy-report.md` 에 `verify/report.md` 의 같은 입력과 나란히 적었다
 - [ ] 차이가 report.md 의 차이보다 크면 웹 개발 문제다(에이전트 설계 문제는 4단계에서 끝났다). 단계 분할·시간 제한·상태 저장 중 어디인지 좁혀 적었다
 - [ ] 사람 단계가 있으면 UI 승인 없이는 다음 단계로 못 간다(마지막이면 결과를 확정하지 못한다)
 - [ ] 외부 서비스로 뺀 단계가 있으면 stub 이 화면에 명시된다
+- [ ] <조건부 판정이면: workflow.md 의 `## 조건` 항목을 배포된 앱에서 하나씩 확인했다. 조건부가 아니면 이 줄을 지운다>
 - [ ] 대상 프로젝트의 로컬 전용 파일(`CLAUDE.local.md` 블록, `settings.local.json` 훅·additionalDirectories)을 지웠다
 
 ## 스타일 (선택)

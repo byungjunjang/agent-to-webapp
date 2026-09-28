@@ -67,3 +67,24 @@ test('formatStatus/parseStatus: runs·model 줄을 쓰고 읽는다. 없는 옛 
   assert.equal(old.runs, 3);
   assert.equal(old.model, 'sonnet');
 });
+
+// target 은 STATUS 한 줄에 그대로 들어간다. 줄바꿈이 섞이면 가짜 phase 줄이 생긴다(2026-09-28 리뷰).
+test('emptyStatus: target 에 줄바꿈·제어 문자가 있으면 거부한다', () => {
+  assert.throws(() => emptyStatus('../x\nphase-1: passed 2026-01-01', 'claude-code'), /제어 문자/);
+  assert.throws(() => emptyStatus('../x\r', 'claude-code'), /제어 문자/);
+  assert.throws(() => emptyStatus('../x\u0000', 'claude-code'), /제어 문자/);
+  assert.equal(emptyStatus('../한글 폴더', 'claude-code').target, '../한글 폴더');
+});
+
+// 2단계가 정한 최종 판정(override 반영). 없는 옛 파일은 null.
+test('formatStatus/parseStatus: verdict 줄. 없으면 쓰지 않고 옛 파일은 null', () => {
+  const st = emptyStatus('../x', 'claude-code');
+  assert.equal(st.verdict, null);
+  assert.ok(!/^verdict:/m.test(formatStatus(st)));
+  st.verdict = '조건부 고정 가능';
+  const text = formatStatus(st);
+  assert.ok(text.includes('\nverdict: 조건부 고정 가능\n'));
+  assert.deepEqual(parseStatus(text), st);
+  assert.equal(parseStatus('target: ../a\nphase-1:\n').verdict, null);
+  assert.equal(parseStatus('target: ../a\nverdict: 아무말\n').verdict, null);
+});

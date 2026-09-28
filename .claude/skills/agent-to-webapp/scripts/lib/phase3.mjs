@@ -2,6 +2,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { normalize, sectionBody, isBlank } from './md.mjs';
+import { finalVerdict, isConditional } from './phase2.mjs';
 
 export const STEP_HEADING = '### 단계 ';
 export const ACTORS = ['코드', 'LLM', '사람'];
@@ -19,6 +20,8 @@ export const COMMON_SCHEMA_HEADING = '## 공통 스키마';
 // 웹 앱에 필요 없는 단계 경계(로컬 흔적, 분기 없는 코드 단계, 중간 사람 단계)를 점검한 결과. 4단계 전에 줄여야
 // 검증한 steps/ 와 5단계가 옮기는 코드가 같다.
 export const SIMPLIFY_HEADING = '## 웹 앱 간소화';
+// 조건부 판정(override 포함)의 조건. 흐름도 바로 다음에 둔다. 판정은 STATUS 의 verdict 로 안다.
+export const CONDITION_HEADING = '## 조건';
 const REF_STEP = /단계\s*(\d+)\s*(?:의\s*)?출력/;
 const REF_COMMON = /공통\s*스키마\s*[`'"]?([A-Za-z0-9_-]*)/;
 const REF_SAME = /입력과\s*같/;
@@ -164,7 +167,8 @@ function resolveSchema(step, kind, steps, common, visited = new Set()) {
   return `'${field}' 는 '입력과 같음' 을 쓸 수 없다`;
 }
 
-export function checkPhase3(a2wDir) {
+// verdict: STATUS 의 최종 판정. 없으면 verdict.md 에서 읽는다.
+export function checkPhase3(a2wDir, { verdict = null } = {}) {
   const errors = [];
   const warnings = [];
   const p = join(a2wDir, 'workflow.md');
@@ -206,6 +210,13 @@ export function checkPhase3(a2wDir) {
   const simplify = sectionBody(text, SIMPLIFY_HEADING);
   if (simplify === null || isBlank(simplify)) {
     errors.push(`'${SIMPLIFY_HEADING}' 절이 ${simplify === null ? '없다' : '비었다'}. 웹 앱에 필요 없는 단계를 점검한 결과를 적는다. 줄인 것이 없으면 '- 없음'`);
+  }
+
+  if (isConditional(finalVerdict(a2wDir, verdict))) {
+    const cond = sectionBody(text, CONDITION_HEADING);
+    if (cond === null || isBlank(cond)) {
+      errors.push(`판정이 조건부 고정 가능인데 '${CONDITION_HEADING}' 절이 ${cond === null ? '없다' : '비었다'}. 흐름도 바로 다음에 조건(override 면 그 사유)을 적는다`);
+    }
   }
 
   let rejudge = false;

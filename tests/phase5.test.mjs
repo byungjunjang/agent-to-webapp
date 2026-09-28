@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { makeApp, write, A2W } from './helpers.mjs';
 import { checkPhase5, BRIEF_HEADINGS, PROMPT_FILE, PROMPT_MUST } from '../.claude/skills/agent-to-webapp/scripts/lib/phase5.mjs';
 
@@ -124,4 +125,24 @@ test('phase5: 입력 파일이 Vercel 요청 본문 상한 근처면 브리프�
 test('phase5: 2절에 maxDuration 이 없으면 실패', () => {
   const r = checkPhase5(app(BRIEF.replace('\nmaxDuration = 60', '')));
   assert.ok(r.errors.some(e => e.includes('2. 실행 시간 분할') && e.includes('maxDuration')), r.errors.join('\n'));
+});
+
+// 틀을 그대로 복사하면 자리표시자 안에 게이트가 찾는 낱말(maxDuration, 배포 보호 등)이 들어 있어 통과했다(2026-09-28 리뷰).
+test('phase5: port-brief-template.md 를 그대로 복사하면 남은 자리표시자로 실패한다', () => {
+  const tpl = readFileSync(resolve('.claude/skills/agent-to-webapp/references/port-brief-template.md'), 'utf8');
+  const r = checkPhase5(app(tpl));
+  assert.equal(r.ok, false);
+  const e = r.errors.find(x => x.includes('자리표시자'));
+  assert.ok(e, r.errors.join('\n'));
+  assert.ok(e.includes('<이름>'), e);
+  const one = BRIEF.replace('Route Handler 에서만', '<workflow.md 의 LLM 단계 번호와 이름> Route Handler 에서만');
+  assert.ok(checkPhase5(app(one)).errors.some(x => x.includes('자리표시자')));
+});
+
+test('phase5: 판정이 조건부면 7절에 workflow.md ## 조건 확인 항목이 있어야 한다', () => {
+  const r = checkPhase5(app(BRIEF), { verdict: '조건부 고정 가능' });
+  assert.ok(r.errors.some(e => e.includes('7. 배포 후 검증') && e.includes('## 조건')), r.errors.join('\n'));
+  const ok = BRIEF.replace('verify/report.md 와 비교\n', 'verify/report.md 와 비교\n- [ ] workflow.md 의 `## 조건` 항목을 배포된 앱에서 확인했다\n');
+  assert.deepEqual(checkPhase5(app(ok), { verdict: '조건부 고정 가능' }).errors, []);
+  assert.deepEqual(checkPhase5(app(BRIEF), { verdict: '고정 가능' }).errors, []);
 });
