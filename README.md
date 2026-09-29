@@ -109,3 +109,7 @@ dashboard 는 출력 스키마를 관찰해 데이터 계약을 만들고 대시
 스킬을 고쳤다면 테스트를 돌린 뒤 다시 설치한다.
 
     node --test "tests/*.test.mjs"
+
+## 라이선스
+
+[MIT](LICENSE)
