@@ -23,7 +23,7 @@ export const NEEDS_APPROVAL = [2, 3];
 export const PHASES = [1, 2, 3, 4, 5];
 export const ROUTING_HINT = [
   '이 과제는 웹 앱 전환 대상이 아니다. 우하단 칸(워크플로우 × 확률론)이 남는다.',
-  '별도 트랙: Agent SDK 를 Vercel 밖 컨테이너에 두거나 Managed Agents. 선례 workos/litigation-writer-app.',
+  '별도 트랙: Agent SDK 를 Vercel 밖 컨테이너에 두거나 Managed Agents.',
   'Agent SDK 는 settingSources 를 생략하면 CLAUDE.md·skills 를 CLI 처럼 다 읽는다. 배포 앱은 settingSources: [] 로 격리하고 필요한 것만 명시한다.',
 ].join('\n');
 export const ENV_WARNING =

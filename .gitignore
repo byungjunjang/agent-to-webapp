@@ -1,8 +1,31 @@
+# 의존성
 node_modules/
+
+# API 키. .env.example 만 올린다
 .env
 .env.*
 !.env.example
+
+# 개인 설정
 CLAUDE.local.md
 AGENTS.override.md
 .claude/settings.local.json
 .codex/hooks.json
+
+# 스킬을 저장소 안에서 잘못 돌렸을 때 생기는 산출물·작업 기록
+docs/agent-to-webapp/
+docs/agent-to-webapp-lite/
+.superpowers/
+docs/.superpowers/
+
+# OS·에디터
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# 로그
+*.log
+npm-debug.log*
