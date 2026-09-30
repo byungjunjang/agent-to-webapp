@@ -7,7 +7,7 @@ import { checkPhase4 } from '../.claude/skills/agent-to-webapp/scripts/lib/phase
 
 const REPORT = `# 재검증 report
 ## 모델
-claude-sonnet-5
+claude-sonnet-5-5
 ## 입력 1: easy
 차이 없음
 ## 입력 2: normal
@@ -63,7 +63,7 @@ test('phase4: steps 없으면 실패', () => {
 });
 
 test('phase4: 모델·입력 3·외부 서비스 절 검사', () => {
-  const noModel = REPORT.replace('claude-sonnet-5\n', '');
+  const noModel = REPORT.replace('claude-sonnet-5-5\n', '');
   assert.ok(checkPhase4(verifyApp(noModel)).errors.some(e => e.includes('모델')));
   const twoInputs = REPORT.replace('## 입력 3: edge\n에스컬레이션 동일\n', '');
   assert.ok(checkPhase4(verifyApp(twoInputs)).errors.some(e => e.includes('입력 3')));
@@ -220,7 +220,7 @@ test('phase4: workflow.md 가 없으면 실패', () => {
 });
 
 // 실행 증거: 러너가 입력마다 남기는 verify/out/<입력>/summary.json 을 게이트가 읽는다. 보고서 글만으로는 통과하지 않는다.
-const SUMMARY = { input: '1-easy', status: 'done', attention: null, model: 'claude-sonnet-5', from: 1, total_ms: 41000, timings: [], usage: [], human_notes: [], control: [] };
+const SUMMARY = { input: '1-easy', status: 'done', attention: null, model: 'claude-sonnet-5-5', from: 1, total_ms: 41000, timings: [], usage: [], human_notes: [], control: [] };
 function withRun(d, name = '1-easy', summary = SUMMARY) {
   write(d, `runs/inputs/${name}/a.pdf`, 'pdf');
   if (summary !== null) write(d, `verify/out/${name}/summary.json`, typeof summary === 'string' ? summary : JSON.stringify(summary));
@@ -248,7 +248,7 @@ test('phase4: summary 의 model 이 STATUS 의 model 과 다르면 경고', () =
   const same = checkPhase4(withRun(verifyApp()), { model: 'sonnet' });
   assert.ok(!same.warnings.some(w => w.includes('model')), same.warnings.join('\n'));
   const r = checkPhase4(withRun(verifyApp(), '1-easy', { ...SUMMARY, model: 'claude-haiku-4-5-20251001' }), { model: 'sonnet' });
-  assert.ok(r.warnings.some(w => w.includes('claude-haiku-4-5-20251001') && w.includes('claude-sonnet-5')), r.warnings.join('\n'));
+  assert.ok(r.warnings.some(w => w.includes('claude-haiku-4-5-20251001') && w.includes('claude-sonnet-5-5')), r.warnings.join('\n'));
 });
 
 test('phase4: --from 으로 이어 돌린 summary 는 시간이 부분이라고 경고', () => {
@@ -257,6 +257,6 @@ test('phase4: --from 으로 이어 돌린 summary 는 시간이 부분이라고 
 });
 
 test('phase4: report 의 모델 절이 summary 의 model 과 다르면 경고', () => {
-  const r = checkPhase4(withRun(verifyApp(REPORT.replace('claude-sonnet-5', 'claude-opus-5'))));
-  assert.ok(r.warnings.some(w => w.includes('모델') && w.includes('claude-sonnet-5')), r.warnings.join('\n'));
+  const r = checkPhase4(withRun(verifyApp(REPORT.replace('claude-sonnet-5-5', 'claude-opus-5'))));
+  assert.ok(r.warnings.some(w => w.includes('모델') && w.includes('claude-sonnet-5-5')), r.warnings.join('\n'));
 });

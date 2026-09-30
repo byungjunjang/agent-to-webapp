@@ -50,7 +50,7 @@
 ## dogfood 할 때
 
 - 저장소 밖에서 돌린다. 저장소 안에서 돌리면 이 저장소 CLAUDE.md 가 관찰 세션에 섞인다. 대상은 `.demo-projects` 의
-  사본을 쓴다. 산출물은 저장소에 두지 않는다(`examples/` 는 2026-09-14 에 지웠다). 시행착오와 결과 요약만 LLM-Wiki
+  사본을 쓴다. 산출물은 저장소에 두지 않는다. 시행착오와 결과 요약만 LLM-Wiki
   `raw/practice/` 로 보낸다
 - Windows Git Bash 에서 `claude -p "/agent-to-webapp …"` 로 부를 때는 `MSYS_NO_PATHCONV=1` 을 붙인다.
   안 붙이면 첫 인자가 `C:/Program Files/Git/…` 로 바뀐다

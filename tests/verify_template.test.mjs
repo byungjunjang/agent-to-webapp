@@ -59,7 +59,7 @@ test('run.ts: 스텁 단계를 순서대로 돌리고 단계별 JSON·summary.js
   assert.deepEqual(JSON.parse(readFileSync(join(out, '04-external.json'), 'utf8')), JSON.parse(readFileSync(join(out, '03-approve.json'), 'utf8')));
   const s = JSON.parse(readFileSync(join(out, 'summary.json'), 'utf8'));
   assert.equal(s.status, 'done');
-  assert.equal(s.model, 'claude-sonnet-5');
+  assert.equal(s.model, 'claude-sonnet-5-5');
   assert.deepEqual(s.timings.map(t => `${t.step}#${t.attempt}`), ['1#1', '2#1', '1#2', '2#2', '3#1', '4#1']);
   assert.ok(s.control.some(c => c.includes('단계 2') && c.includes('단계 1') && c.includes('again')));
   assert.ok(s.control.some(c => c.includes('단계 4') && c.includes('외부 서비스')));
@@ -121,11 +121,13 @@ test('run.ts: 인자가 없거나 입력 폴더가 없으면 2', () => {
   assert.equal(runner(dir, 'nope-dir').code, 2);
 });
 
-test('lib/llm.ts: SDK 없이 불러지고 unwrapStringified·fileBlocks 가 순수 함수다', async () => {
-  const { unwrapStringified, fileBlocks } = await import(pathToFileURL(join(TEMPLATE, 'lib', 'llm.ts')).href);
-  assert.deepEqual(unwrapStringified({ a: 1 }, ['a']), { value: { a: 1 }, unwrapped: false });
-  assert.deepEqual(unwrapStringified({ x: '{"a":1,"b":2}' }, ['a', 'b']), { value: { a: 1, b: 2 }, unwrapped: true });
-  assert.deepEqual(unwrapStringified({ x: 'not json' }, ['a']), { value: { x: 'not json' }, unwrapped: false });
+test('lib/llm.ts: SDK 없이 불러지고 readOutput·fileBlocks 가 순수 함수다', async () => {
+  const { readOutput, LlmOutputError, fileBlocks } = await import(pathToFileURL(join(TEMPLATE, 'lib', 'llm.ts')).href);
+  // 생각 블록은 건너뛰고 text 블록의 JSON 을 읽는다
+  assert.deepEqual(readOutput({ stop_reason: 'end_turn', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: '{"a":1}' }] }, 16000), { a: 1 });
+  assert.throws(() => readOutput({ stop_reason: 'refusal', content: [] }, 16000), LlmOutputError);
+  assert.throws(() => readOutput({ stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"a":' }] }, 16000), /max_tokens\(16000\)/);
+  assert.throws(() => readOutput({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'not json' }] }, 16000), LlmOutputError);
   const b64 = (s) => Buffer.from(s).toString('base64');
   const blocks = fileBlocks([
     { name: 'a.pdf', media_type: 'application/pdf', data_base64: b64('%PDF') },
@@ -137,13 +139,19 @@ test('lib/llm.ts: SDK 없이 불러지고 unwrapStringified·fileBlocks 가 순�
   assert.ok(blocks.some(b => b.type === 'text' && b.text.includes('b.md') && b.text.includes('# t')));
 });
 
-test('lib/llm.ts: 요청은 도구 호출을 강제하지 않는다(Opus 5.5·Fable 5.1 은 tool_choice tool·any 에 400)', async () => {
+test('lib/llm.ts: 요청은 structured outputs 로 스키마를 넘기고 도구를 쓰지 않는다', async () => {
   const { buildRequest } = await import(pathToFileURL(join(TEMPLATE, 'lib', 'llm.ts')).href);
-  const tool = { name: 'emit', description: 'd', input_schema: { type: 'object', properties: {}, required: [] } };
+  const schema = { type: 'object', properties: { items: { type: 'array', items: { type: 'object', properties: { n: { type: 'integer' } }, required: ['n'] } } }, required: ['items'] };
+  const tool = { name: 'emit', description: 'd', input_schema: schema };
   const req = buildRequest({ step: '1', system: 'S', content: 'x', tool }, [{ type: 'text', text: 'x' }], 'claude-opus-5-5', 16000);
-  assert.deepEqual(req.tool_choice, { type: 'auto', disable_parallel_tool_use: true });
-  assert.ok(req.system.startsWith('S') && req.system.includes('emit'), '시스템 프롬프트가 도구 이름을 짚어 호출을 지시한다');
-  assert.deepEqual(req.tools, [tool]);
+  assert.equal(req.output_config.format.type, 'json_schema');
+  const sent = req.output_config.format.schema;
+  // structured outputs 는 모든 object 에 additionalProperties: false 를 요구한다. 빠진 곳에 채우고 원본은 건드리지 않는다
+  assert.equal(sent.additionalProperties, false);
+  assert.equal(sent.properties.items.items.additionalProperties, false);
+  assert.ok(!('additionalProperties' in schema), '단계 파일의 스키마 객체를 바꾸지 않는다');
+  assert.equal(req.system, 'S');
+  assert.ok(!('tools' in req) && !('tool_choice' in req), '도구를 JSON 통로로 쓰지 않는다');
   assert.equal(req.model, 'claude-opus-5-5');
   assert.ok(!('thinking' in req) && !('temperature' in req), '최신 모델이 400 을 내는 thinking·temperature 는 보내지 않는다');
 });

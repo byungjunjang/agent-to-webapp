@@ -64,8 +64,8 @@
 
 `$TARGET/.claude/settings.local.json` 에 `assets/hooks.claude.example.json` 의 내용을 합친다. 이미 있는 키는
 보존하고 `hooks.PostToolUse` 배열과 `permissions.additionalDirectories` 배열에 항목을 추가한다.
-`<SKILL_DIR>` 과 `<APP>` 은 절대 경로(슬래시 `/`)로 바꾼다. `<MODEL>` 은 STATUS 의 `model`(별칭 그대로. Claude Code 는
-`sonnet`·`opus`·`haiku` 를 받는다). 이 값이 관찰 세션의 모델이 되고 4단계 재검증도 같은 모델로 돌아서 비교에 모델 차이가
+`<SKILL_DIR>` 과 `<APP>` 은 절대 경로(슬래시 `/`)로 바꾼다. `<MODEL>` 은 STATUS 의 `model` 을 `scripts/lib/models.mjs` 의
+`resolveModelId` 로 푼 **전체 ID** 로 쓴다(별칭이면 그 표의 ID). 관찰과 4단계 재검증이 같은 ID 를 써야 비교에 모델 차이가
 끼지 않는다. 학습자에게 세션을 열 때 `--model` 을 붙이지 말라고 알린다. CLI 플래그가 설정을 이긴다.
 
 훅은 도구 호출마다 한 줄을 남기되 파일 경로·명령과 응답 첫 200자만 기록한다. 파일 내용과 긴 출력은 남기지 않는다.

@@ -1,6 +1,5 @@
-// Anthropic 호출을 한 곳에 모은다. LLM 단계는 도구 1개를 부르게 해 JSON 만 받는다.
-// tool_choice 로 강제하지 않는다. Claude Opus 5.5·Fable 5.1 은 tool_choice tool·any 에 400 을 낸다.
-// auto + 프롬프트 지시로 부르게 하고, 안 부르면 callTool 이 다시 묻는다.
+// Anthropic 호출을 한 곳에 모은다. LLM 단계는 structured outputs(output_config.format)로 스키마에 맞는 JSON 만 받는다.
+// 도구를 JSON 통로로 쓰지 않으므로 도구 호출 누락을 다시 묻거나 문자열로 감싼 입력을 풀 일이 없다.
 // API 키는 SDK 가 환경변수 ANTHROPIC_API_KEY 에서 읽는다(node --env-file-if-exists 로 주입). 코드는 키를 만지지 않는다.
 // 스킬 자산(assets/verify-template)에서 복사된다. 고치지 않는다.
 import { MODEL, usageLog } from './step.ts';
@@ -8,6 +7,10 @@ import type { InputFile, UsageEntry } from './step.ts';
 
 export { MODEL, usageLog };
 
+/**
+ * 단계 파일이 넘기는 출력 명세. input_schema 가 응답 JSON 의 스키마가 된다(output_config.format).
+ * name·description 은 요청에 싣지 않는다. 이름과 모양은 도구로 JSON 을 받던 때의 단계 파일과 맞춘 것이다.
+ */
 export interface ToolSpec {
   name: string;
   description: string;
@@ -27,7 +30,7 @@ async function getClient(): Promise<any> {
   return client;
 }
 
-/** 도구가 호출되지 않았거나 출력이 잘린 경우. 스키마 불일치와 같은 급으로 다룬다. */
+/** 거절·잘림·JSON 이 아닌 응답. 스키마 불일치와 같은 급으로 다룬다. */
 export class LlmOutputError extends Error {
   constructor(message: string) {
     super(message);
@@ -54,37 +57,36 @@ export function fileBlocks(files: InputFile[], label: (f: InputFile) => string =
 }
 
 /**
- * 도구 input 이 JSON 문자열 하나로 감싸져 온 경우를 푼다. 모델이 {"key": "{...전체 JSON...}"} 처럼 낼 때가 있다.
- * 필수 키가 다 있으면 손대지 않는다. 문자열 값 가운데 JSON 으로 풀려 필수 키를 모두 가진 것이 있으면 그것을 쓴다.
+ * structured outputs 는 모든 object 에 additionalProperties: false 를 요구한다. 빠진 곳에만 채운 사본을 돌려준다.
+ * 수치·길이 제약(minimum·maxLength 등)은 API 가 받지 않으므로 workflow.md 스키마에 쓰지 않는다.
  */
-export function unwrapStringified(input: unknown, required: string[]): { value: unknown; unwrapped: boolean } {
-  if (typeof input !== 'object' || input === null || required.length === 0) return { value: input, unwrapped: false };
-  const obj = input as Record<string, unknown>;
-  if (required.every((k) => k in obj)) return { value: input, unwrapped: false };
-  for (const v of Object.values(obj)) {
-    if (typeof v !== 'string') continue;
-    try {
-      const parsed = JSON.parse(v) as unknown;
-      if (typeof parsed === 'object' && parsed !== null && required.every((k) => k in (parsed as Record<string, unknown>))) {
-        return { value: parsed, unwrapped: true };
-      }
-    } catch {
-      // JSON 이 아니면 다음 값
+export function outputSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(outputSchema);
+  if (typeof schema !== 'object' || schema === null) return schema;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
+    if (k === 'properties' || k === '$defs' || k === 'definitions') {
+      out[k] = Object.fromEntries(Object.entries((v ?? {}) as Record<string, unknown>).map(([pk, pv]) => [pk, outputSchema(pv)]));
+    } else if (k === 'items' || k === 'anyOf' || k === 'allOf') {
+      out[k] = outputSchema(v);
+    } else {
+      out[k] = v;
     }
   }
-  return { value: input, unwrapped: false };
+  const t = out.type;
+  const isObject = t === 'object' || (Array.isArray(t) && t.includes('object')) || 'properties' in out;
+  if (isObject && !('additionalProperties' in out)) out.additionalProperties = false;
+  return out;
 }
 
 export interface CallToolOptions {
-  /** usage 기록에 남는 이름. "2" 또는 "2#재시도" 처럼. */
+  /** usage 기록에 남는 이름. 단계 번호 "2" 처럼. */
   step: string;
   system: string;
   content: Block[] | string;
   tool: ToolSpec;
   max_tokens?: number;
   model?: string;
-  /** 도구 호출이 없거나 출력이 잘렸을 때 다시 묻는 횟수. 기본 1. */
-  retries?: number;
 }
 
 /** messages.create 에 넘길 요청. 순수 함수라 테스트가 모양을 확인한다. */
@@ -92,47 +94,46 @@ export function buildRequest(opts: CallToolOptions, content: Block[], model: str
   return {
     model,
     max_tokens: maxTokens,
-    system: `${opts.system}
-
-답은 도구 ${opts.tool.name} 을 한 번 호출해 그 입력으로만 낸다. 도구 밖에 글을 쓰지 않는다.`,
+    system: opts.system,
     messages: [{ role: 'user', content }],
-    tools: [opts.tool],
-    tool_choice: { type: 'auto', disable_parallel_tool_use: true },
+    output_config: { format: { type: 'json_schema', schema: outputSchema(opts.tool.input_schema) } },
   };
 }
 
-/** 도구 1개를 부르게 해 그 input 을 돌려준다. API 오류는 그대로 던진다(SDK 가 429·5xx 는 스스로 재시도한다). */
+/** 응답에서 JSON 을 꺼낸다. 거절·잘림·파싱 실패는 LlmOutputError. 순수 함수라 테스트가 부른다. */
+export function readOutput<T>(res: { stop_reason: string | null; content: Block[] }, maxTokens: number): T {
+  if (res.stop_reason === 'refusal') throw new LlmOutputError('모델이 요청을 거절했다 (stop_reason=refusal)');
+  if (res.stop_reason === 'max_tokens') throw new LlmOutputError(`출력이 max_tokens(${maxTokens}) 에서 잘렸다`);
+  // 생각이 켜진 모델은 thinking 블록이 앞에 온다. JSON 은 text 블록에 있다.
+  const text = res.content.filter((b) => b.type === 'text').map((b) => String(b.text)).join('');
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new LlmOutputError(`응답이 JSON 이 아니다 (stop_reason=${res.stop_reason})`);
+  }
+}
+
+/** 스키마에 맞는 JSON 을 받아 돌려준다. API 오류는 그대로 던진다(SDK 가 429·5xx 는 스스로 재시도한다). */
 export async function callTool<T>(opts: CallToolOptions): Promise<T> {
-  const retries = opts.retries ?? 1;
-  // 최신 모델은 생각이 켜져 있고 생각 토큰도 max_tokens 에 든다. 4096 이면 도구 입력 전에 잘릴 수 있다.
+  // 최신 모델은 생각이 켜져 있고 생각 토큰도 max_tokens 에 든다. 4096 이면 JSON 을 다 쓰기 전에 잘릴 수 있다.
   const maxTokens = opts.max_tokens ?? 16000;
   const model = opts.model ?? MODEL;
-  const content: Block[] = typeof opts.content === 'string' ? [{ type: 'text', text: opts.content }] : [...opts.content];
-  let lastError: LlmOutputError | null = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const started = Date.now();
-    const res = await (await getClient()).messages.create(buildRequest(opts, content, model, maxTokens));
-    const entry: UsageEntry = {
-      step: attempt === 0 ? opts.step : `${opts.step}#재시도${attempt}`,
-      model: res.model,
-      input_tokens: res.usage.input_tokens,
-      output_tokens: res.usage.output_tokens,
-      ms: Date.now() - started,
-      stop_reason: res.stop_reason,
-    };
-    usageLog.push(entry);
-    const block = res.content.find((b: any) => b.type === 'tool_use');
-    if (res.stop_reason === 'refusal') lastError = new LlmOutputError('모델이 요청을 거절했다 (stop_reason=refusal)');
-    else if (res.stop_reason === 'max_tokens') lastError = new LlmOutputError(`출력이 max_tokens(${maxTokens}) 에서 잘렸다`);
-    else if (!block) lastError = new LlmOutputError(`도구 호출이 없다 (stop_reason=${res.stop_reason})`);
-    else {
-      const required = Array.isArray(opts.tool.input_schema.required) ? (opts.tool.input_schema.required as string[]) : [];
-      const { value, unwrapped } = unwrapStringified(block.input, required);
-      if (unwrapped) entry.note = '도구 input 이 JSON 문자열로 감싸져 있어 풀었다';
-      return value as T;
-    }
-    entry.note = lastError.message;
-    content.push({ type: 'text', text: `앞 응답은 쓸 수 없었다: ${lastError.message}. 도구 ${opts.tool.name} 을 한 번만 호출해 스키마대로만 답하라. 다른 말은 넣지 않는다.` });
+  const content: Block[] = typeof opts.content === 'string' ? [{ type: 'text', text: opts.content }] : opts.content;
+  const started = Date.now();
+  const res = await (await getClient()).messages.create(buildRequest(opts, content, model, maxTokens));
+  const entry: UsageEntry = {
+    step: opts.step,
+    model: res.model,
+    input_tokens: res.usage.input_tokens,
+    output_tokens: res.usage.output_tokens,
+    ms: Date.now() - started,
+    stop_reason: res.stop_reason,
+  };
+  usageLog.push(entry);
+  try {
+    return readOutput<T>(res, maxTokens);
+  } catch (e) {
+    if (e instanceof LlmOutputError) entry.note = e.message;
+    throw e;
   }
-  throw lastError ?? new LlmOutputError('알 수 없는 실패');
 }

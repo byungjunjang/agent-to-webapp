@@ -2,7 +2,7 @@
 // steps/index.ts 가 이 타입으로 단계 배열 `steps` 를 내보내면 run.ts 가 순서대로 부른다.
 // Node 24 가 타입만 지우고 그대로 실행한다. enum·파라미터 프로퍼티 같은 지워지지 않는 문법은 쓰지 않는다.
 
-export const MODEL: string = process.env.A2W_MODEL ?? 'claude-sonnet-5';
+export const MODEL: string = process.env.A2W_MODEL ?? 'claude-sonnet-5-5';
 
 /** 같은 단계로 되돌아가는 횟수 한도. 넘으면 needs_attention. */
 export const MAX_ATTEMPTS = 3;

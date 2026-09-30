@@ -20,7 +20,7 @@
 
 ## 1. 서버 쪽 호출
 Claude 를 부르는 코드와 API 키는 Route Handler 또는 Server Action 에만 둔다. 브라우저 번들에 키가 가지 않는다.
-- 호출 방식: verify/lib/llm.ts 의 callTool 을 그대로 옮긴다. tool_choice 를 `tool`·`any` 로 강제하지 않는다(Claude Opus 5.5·Fable 5.1 은 400)
+- 호출 방식: verify/lib/llm.ts 의 callTool 을 그대로 옮긴다. structured outputs(`output_config.format`)로 스키마에 맞는 JSON 을 받는다
 - LLM 단계: <workflow.md 의 LLM 단계 번호와 이름>
 - 환경변수: ANTHROPIC_API_KEY (Vercel 프로젝트 설정), A2W_MODEL=<STATUS 의 model ID. 관찰·재검증과 같은 모델>
 - 로컬 `next dev` 는 이 폴더의 `.env.local` 에 키를 둔다(create-next-app 의 .gitignore 가 가린다). 스킬 `.env` 는 4단계 검증용이라 웹 앱이 읽지 않는다

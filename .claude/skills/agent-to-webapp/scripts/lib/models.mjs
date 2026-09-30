@@ -1,7 +1,7 @@
 // 관찰과 재검증이 같은 모델을 쓴다. STATUS 에는 별칭(또는 전체 ID)을 적고, API 를 부를 때 ID 로 푼다.
 // Claude Code 의 settings `model` 은 별칭을 그대로 받고, Anthropic SDK 는 전체 ID 가 필요하다.
 export const MODEL_ALIASES = {
-  sonnet: 'claude-sonnet-5',
+  sonnet: 'claude-sonnet-5-5',
   opus: 'claude-opus-5-5',
   haiku: 'claude-haiku-4-5-20251001',
 };

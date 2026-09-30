@@ -223,7 +223,7 @@ test('2단계 --override: 뒤집은 판정이 STATUS 에 남고 3단계가 그 �
   assert.equal(bad.code, 1);
   assert.ok(bad.err.includes('## 프롬프트'), bad.err);
   write(app, `${LITE}/skill-spec.md`, skillSpec(['## 프롬프트', '', '```', '바코드와 품목을 JSON 으로', '```', '',
-    '- 모델: claude-sonnet-5', '- 최대 토큰: 4096', '- 타임아웃: 60초', '']));
+    '- 모델: claude-sonnet-5-5', '- 최대 토큰: 4096', '- 타임아웃: 60초', '']));
   const ok = call(app, ['3', '--approve']);
   assert.equal(ok.code, 0, ok.err);
 });
